@@ -44,7 +44,3 @@ def calculate_idle_time(schedule: pd.DataFrame):
     # Return sum of idle times accross all machines
     return sum(idle_times.values())
 
-
-schedule = pd.read_csv('../solutions/milp/milp_solution_FJSP_10.csv')
-print('Makespan', calculate_makespan(schedule))
-print('Total Idle Time', calculate_idle_time(schedule))

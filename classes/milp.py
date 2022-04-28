@@ -16,7 +16,10 @@ class FlexibleJobShop:
         self.L = 1000
         self.instance = instance
 
-    def build_model(self, csv_output):
+    def build_model(self, csv_output, time=0):
+
+        if time != 0:
+            self.model.setParam('TimeLimit', time)
 
         # Sets
         J = set([(i) for i in self.jobs])
@@ -103,6 +106,8 @@ class FlexibleJobShop:
 
         schedule = pd.DataFrame(results)
         schedule.to_csv(csv_output, index=False)
+
+        return schedule
 
 
 
