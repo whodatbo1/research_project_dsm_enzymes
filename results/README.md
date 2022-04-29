@@ -1,0 +1,1 @@
+Can be used to store interesting results worth sharing
