@@ -2,33 +2,37 @@ import pygad
 import numpy as np
 from utils import *
 import pandas as pd
+from datetime import datetime
 
 
-def generate_random_schedule(instance_num):
-    v1 = []
-    v2 = []
-    v3 = []
-
+def generate_random_schedule_encoding(instance_num):
     instance = get_instance_info(instance_num)
+    v_length = sum([len(k) for k in instance.operations.values()])
+    v = np.zeros((v_length, 3)).astype(np.uint64)
+    index = 0
 
     for job in instance.operations:
         for i in range(len(instance.operations[job])):
-            op = instance.operations[job][i]
-            r = np.random.randint(len(instance.machineAlternatives[job, i]))
-            print('len', len(instance.machineAlternatives[job, op]))
-            print('chosen', instance.machineAlternatives[job, op][r], op)
-            v1.append(instance.machineAlternatives[job, i][r])
-            v3.append(i)
-    counts = {j:0 for j in instance.jobs}
-    max_counts = {j:len(instance.operations[j]) for j in instance.jobs}
+            r = np.random.choice(instance.machineAlternatives[job, i])
+            v[index, 0] = r
+            v[index, 1] = job
+            v[index, 2] = i
+            index += 1
 
-    while len(v1) > len(v2):
+    counts = {j: 0 for j in instance.jobs}
+    max_counts = {j: len(instance.operations[j]) for j in instance.jobs}
+    index = 0
+    while index < v_length:
         rnint = np.random.randint(instance.nr_jobs)
         if counts[rnint] < max_counts[rnint]:
-            v2.append(rnint)
-    print(v1)
-    print(v2)
-    print(v3)
+            v[index, 1] = rnint
+            counts[rnint] += 1
+            index += 1
+
+    v1 = v[:, 0]
+    v2 = v[:, 1]
+    v3 = v[:, 2]
+
     return v1, v2, v3
 
 def encode_schedule(schedule):
@@ -43,27 +47,60 @@ def decode_schedule(instance_num, v1, v2, v3):
     curr_machine_times = {m:0 for m in instance.machines}
     curr_job_times = {j: 0 for j in instance.jobs}
     prev_enzyme = {m:None for m in instance.machines}
+    op_index = {j:0 for j in instance.jobs}
     results = []
-    for i in range(len(v1)):
-        m = v1[i]
-        j = v2[i]
-        o = v3[i]
 
-        start = max(curr_job_times[j], curr_machine_times[m])
-        print('ptimes', instance.processingTimes)
-        end = start + instance.processingTimes[j, o, m]
+    init_indices = np.where(v3 == 0)[0]
+    i = 0
+    for job in instance.jobs:
+        for op in instance.operations[job]:
+            j = v2[i]
+            o = instance.operations[j][op_index[j]]
+            m = v1[init_indices[j] + op_index[j]]
+            op_index[j] += 1
 
-        results.append(
-            {"Machine": m, "Job": j, "Product": instance.orders[o]["product"], "Operation": o, "Start": start,
-             "Duration":
-                 instance.processingTimes[j, o, m], "Completion": end})
+            duration = instance.processingTimes[j, o, m]
 
+            start = max(curr_job_times[j], curr_machine_times[m])
+
+            curr_machine_times[m] += duration
+            if prev_enzyme[m] is not None:
+                co_time = instance.changeOvers[(m, prev_enzyme[m], instance.orders[j]['product'])]
+                start += co_time
+                curr_machine_times[m] += co_time
+            prev_enzyme[m] = instance.orders[j]['product']
+
+            end = start + duration
+
+            curr_job_times[j] = end
+
+            res = {"Machine": m, "Job": j, "Product": instance.orders[j]["product"], "Operation": o, "Start": start,
+                 "Duration":
+                     instance.processingTimes[j, o, m], "Completion": end}
+            results.append(res)
+            i += 1
     schedule = pd.DataFrame(results)
+    schedule.sort_values(by=['Start', 'Machine', 'Job'], inplace=True)
     schedule.to_csv('csv_output.csv', index=False)
 
+    return schedule['Completion'].max()
 
-def calculate_makespan(schedule):
-    pass
 
-v1, v2, v3 = generate_random_schedule(0)
-decode_schedule(0, v1, v2, v3)
+def generate_random_schedule(instance_num):
+    v1, v2, v3 = generate_random_schedule_encoding(instance_num)
+    # print(v2)
+    v2 = decode_schedule(instance_num, v1, v2, v3)
+    return v2
+
+def generate_staring_population(instance_num, size):
+    sum = 0
+    for i in range(size):
+        sum += generate_random_schedule(instance_num)
+    print('avg', sum/size)
+    return
+
+
+generate_random_schedule(0)
+s = datetime.now()
+generate_staring_population(12, 500)
+print('time elapsed', datetime.now() - s)

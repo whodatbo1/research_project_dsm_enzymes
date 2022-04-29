@@ -79,6 +79,8 @@ class FlexibleJobShop:
         # 8.  Minimize make span, make span is bigger than all finish times of jobs
         self.model.addConstrs((f[i] <= Cmax for i in J), 'objectiveConstraint')
 
+        self.model.Params.timeLimit = 5000.0
+
         self.model.update()
         self.model.write('solutions/milp/models/' + self.instance + '.lp')
         self.model.optimize()
@@ -104,6 +106,7 @@ class FlexibleJobShop:
         schedule = pd.DataFrame(results)
         schedule.to_csv(csv_output, index=False)
 
+        return schedule
 
 
 
