@@ -1,1 +1,1 @@
-Can be used to store interesting results worth sharing
+Please specify the hardware on which the results where obtained!! (to prevent unfair comparisons)
