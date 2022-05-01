@@ -4,6 +4,9 @@ from utils import *
 import pandas as pd
 from datetime import datetime
 
+def calculate_makespan(schedule):
+    comp_times = schedule["Completion"]
+    return comp_times.max()
 
 def generate_random_schedule_encoding(instance_num):
     instance = get_instance_info(instance_num)
@@ -83,21 +86,24 @@ def decode_schedule(instance_num, v1, v2, v3):
     schedule.sort_values(by=['Start', 'Machine', 'Job'], inplace=True)
     schedule.to_csv('csv_output.csv', index=False)
 
-    return schedule['Completion'].max()
+    return schedule
 
 
 def generate_random_schedule(instance_num):
     v1, v2, v3 = generate_random_schedule_encoding(instance_num)
-    # print(v2)
-    v2 = decode_schedule(instance_num, v1, v2, v3)
-    return v2
+    schedule = decode_schedule(instance_num, v1, v2, v3)
+    return schedule
+
 
 def generate_staring_population(instance_num, size):
     sum = 0
+    schedules = []
     for i in range(size):
-        sum += generate_random_schedule(instance_num)
-    print('avg', sum/size)
-    return
+        s = generate_random_schedule(instance_num)
+        schedules.append(s)
+        sum += calculate_makespan(s)
+    print('avg makespan of', instance_num, 'is', sum/size)
+    return schedules
 
 
 generate_random_schedule(0)
