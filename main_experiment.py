@@ -27,4 +27,4 @@ def run_experiment(name, funcs_times_labels, nr_instances=13):
     plt.savefig(path + "\\" + name + ".png")
     
 
-run_experiment("milp-2700", [(milp_solve, 2700, "MILP solver, limited to 900 second")])
+run_experiment("milp-30-60-180-300", [(milp_solve, 30, "MILP solver, limited to 30 seconds"), (milp_solve, 60, "MILP solver, limited to 60 seconds"), (milp_solve, 180, "MILP solver, limited to 180 seconds"), (milp_solve, 300, "MILP solver, limited to 300 seconds")])
