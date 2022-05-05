@@ -24,7 +24,10 @@ def mutate_schedule(instance, encoded_schedule, mutation_coef: float):
             v1[i] = new_m
         # Determine if we perform mutation type 2 on gene
         elif np.random.rand() < mutation_coef:
-            pass
+            coef = np.random.randint(0, len(v1))
+            placeholder = v1[coef]
+            v1[coef] = v1[i]
+            v1[i] = v1[coef]
         else:
             pass
 

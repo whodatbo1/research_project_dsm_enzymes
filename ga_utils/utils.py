@@ -8,6 +8,7 @@ def get_instance_info(i):
     spec.loader.exec_module(mod)
     return mod
 
+
 def calculate_problem_size(instance):
     init = 1
     for j in instance.jobs:
@@ -15,4 +16,5 @@ def calculate_problem_size(instance):
             init *= len(instance.machineAlternatives[j, op])
     return init
 
-print(calculate_problem_size(get_instance_info(0)))
+
+# print(calculate_problem_size(get_instance_info(0)))
