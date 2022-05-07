@@ -2,8 +2,9 @@
 import pandas as pd
 
 
-def check_valid(s: pd.DataFrame):
+def check_valid(schedule: pd.DataFrame):
     # s = pd.read_csv('./min_csv_output.csv')
+    s = schedule.copy(deep=True)
     s.sort_values(by=['Machine', 'Completion'], ignore_index=True, inplace=True)
     starts = pd.concat([pd.Series([0]), s['Completion']], ignore_index=True)
     # starts.insert(0, 'Start', 0)

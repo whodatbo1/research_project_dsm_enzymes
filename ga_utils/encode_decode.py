@@ -1,9 +1,9 @@
 import numpy as np
-from utils import *
+from .utils import *
 import pandas as pd
 from datetime import datetime
 import bisect
-from help import check_valid
+from .help import check_valid
 
 
 def calculate_makespan(schedule):
@@ -47,8 +47,6 @@ def encode_schedule(schedule: pd.DataFrame):
     schedule.sort_values(by=['Job', 'Operation'], inplace=True)
     v1 = schedule['Machine'].to_numpy()
     v3 = schedule['Operation'].to_numpy()
-
-    # print(v1, v2, v3)
 
     return v1, v2, v3
 
@@ -102,6 +100,7 @@ def decode_schedule(instance, v1, v2, v3):
     schedule.to_csv('csv_output.csv', index=False)
 
     return schedule, v1, v2
+
 
 # v1 contains machine assignments - v1(r) is a machine
 # v2 contains operation sequence - v2(r) is a job
@@ -233,22 +232,17 @@ def generate_starting_population(instance_num, size):
 
     for i in range(size):
         v1, v2 = generate_random_schedule_encoding(instance)
-        population.append((v1, v2))
-
+        schedule, v1, v2 = decode_schedule_active(instance, v1, v2, v3)
+        population.append((calculate_makespan(schedule), schedule, v1, v2))
+    population = sorted(population, key=lambda sched: sched[0])
+    # print(population[0][0])
+    # print(population[0][1].sort_values(by=["Machine", "Start"]))
+    # print(population[0][2])
+    # print(population[0][3])
     return population
 
 
-s = datetime.now()
-generate_starting_schedules(1, 1000)
-print('time elapsed', datetime.now() - s)
-
-# s, v1, v2 = decode_schedule_active(get_instance_info(1), np.array([2, 5, 7, 2, 3, 7, 1, 4, 0, 6, 3, 7, 3, 8, 1, 5, 7, 2, 3, 8, 2, 5,
-#        7, 1, 4, 7, 4, 7, 3, 7], dtype=np.uint64),
-# np.array([ 6,  3,  4,  5,  0,  4,  8,  1,  5,  6,  9,  2,  8,  9,  1,  8,  2,
-#         3, 11,  1, 11, 10,  9, 10,  7,  7,  7,  0,  0,  6], dtype=np.uint64),
-# np.array([0, 1, 2, 0, 1, 2, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 2, 0, 1, 2, 0, 1,
-#        2, 0, 1, 2, 0, 1, 0, 1], dtype=np.uint64))
-
-# check_valid(s)
-
-# decode_schedule_active(get_instance_info(1), v1, v2, v3)
+if __name__ == "__main__":
+    s = datetime.now()
+    generate_starting_schedules(1, 1000)
+    print('time elapsed', datetime.now() - s)
