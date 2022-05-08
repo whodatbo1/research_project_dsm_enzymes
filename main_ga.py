@@ -15,14 +15,23 @@ def fitness_function(schedule):
 # 2. Any order of elements can be swapped in the order vector (v2)
 def mutate_schedule(instance, encoded_schedule, mutation_coef: float):
     v1, v2, v3 = encoded_schedule
-    op_index = {j: 0 for j in instance.jobs}
 
+    job_vector = np.zeros(len(v1), dtype=np.int64)
+    index = 0
+    for job in instance.jobs:
+        op_count = len(instance.operations[job])
+        # print(job, 'aaaaaaa', job_vector[index:(index + op_count)], index)
+        job_vector[index:(index + op_count)] = np.full(op_count, job)
+        index = index + op_count
+
+    op_index = {job: 0 for job in instance.jobs}
+    # init_indices = np.where(v3 == 0)[0]
     for i in range(len(v1)):
         # Determine if we perform mutation type 1 on gene
+        j = job_vector[i]
+        op = instance.operations[j][op_index[j]]
+        op_index[j] += 1
         if np.random.rand() < mutation_coef:
-            j = v2[i]
-            op = instance.operations[j][op_index[j]]
-            op_index[j] += 1
             new_m = np.random.choice(instance.machineAlternatives[j, op])
             v1[i] = new_m
         # Determine if we perform mutation type 2 on gene
@@ -35,6 +44,8 @@ def mutate_schedule(instance, encoded_schedule, mutation_coef: float):
         else:
             pass
 
+    return v1, v2
+
 
 def get_new_rep_v2(jobs, v2):
     new_rep = np.zeros_like(v2)
@@ -42,7 +53,6 @@ def get_new_rep_v2(jobs, v2):
 
     for i in jobs:
         indices = np.where(v2 == i)[0]
-        # print(i, '1', indices)
         new_rep[curr_i: curr_i + len(indices)] = indices
 
         curr_i += len(indices)
@@ -65,7 +75,7 @@ def get_v2_from_new_rep(instance, new_rep_v2):
     return np.array(v2)
 
 
-def crossover(instance, schedule_male, schedule_female):
+def crossover(instance, schedule_male, schedule_female, i1=None, i2=None):
     v1_male, v2_male = schedule_male
     v1_female, v2_female = schedule_female
 
@@ -94,7 +104,8 @@ def crossover(instance, schedule_male, schedule_female):
     v3_child = np.full(length, -1, dtype=np.int64)
 
     indices = sorted(np.random.randint(0, len(v1_male), 2))
-    i1, i2 = indices
+    if i1 is None and i2 is None:
+        i1, i2 = indices
     new_rep_child = np.full(length, -1, dtype=np.int64)
     new_rep_child[i1:i2] = new_rep_male[i1:i2]
 
@@ -117,7 +128,7 @@ def crossover(instance, schedule_male, schedule_female):
     # print('v1_child\n', v1_child)
     v2_child = get_v2_from_new_rep(instance, new_rep_child)
     # print('v2_child\n', v2_child)
-    return v1_child, v2_child
+    return v1_child, v2_child, i1, i2
 
 
 def pipeline(instance_num, size, generations, fitness):
@@ -131,12 +142,8 @@ def pipeline(instance_num, size, generations, fitness):
 
     probability_vector = np.ones(size, dtype=np.float64)
     roulette_size = int(size * 9 / 10)
-    print(roulette_size)
-    # print('kek', np.linspace(0, 1, roulette_size))
     probability_vector[size - roulette_size:] = np.linspace(0, 1, roulette_size)
-
     probability_vector = probability_vector / np.sum(probability_vector)
-    # print('pv', probability_vector)
 
     parent_count = int(size / 2)
     if parent_count % 2 == 1:
@@ -150,19 +157,18 @@ def pipeline(instance_num, size, generations, fitness):
 
     for gen in range(generations):
         parents = np.random.choice(size, parent_count, p=probability_vector)
-        kek = np.arange(0, len(parents), 2)
-        print("Generation", gen)
+        print("Generation", gen + 1)
         for i in np.arange(0, len(parents), 2):
-            # print(fitness_value)
-            # print(parents[i])
             p1 = population[parents[i]]
             p2 = population[parents[i + 1]]
             p1_vectors = (p1[2], p1[3])
             p2_vectors = (p2[2], p2[3])
-            v1_child, v2_child = crossover(instance, p1_vectors, p2_vectors)
-            # v1_child, v2_child = p1_vectors
-            # mutate_schedule(instance, (v1_child, v2_child, v3), 0.01)
+
+            v1_child, v2_child, i1, i2 = crossover(instance, p1_vectors, p2_vectors)
+            v1_child, v2_child = mutate_schedule(instance, (v1_child, v2_child, v3), 0.03)
+
             schedule, v1, v2 = decode_schedule_active(instance, v1_child, v2_child, v3)
+
             population.append((calculate_makespan(schedule), schedule, v1, v2))
 
         population = sorted(population, key=lambda sched: sched[0])[:size]
@@ -202,10 +208,11 @@ def read_static():
         v3 = np.array(v3, dtype=np.uint64)
         decode_schedule_active(instance, v1, v2, v3)
 
+
 def run():
     print("Starting GA...")
 
-    pipeline(0, 100, 100, fitness_function)
+    pipeline(1, 100, 100, fitness_function)
 
 
 if __name__ == "__main__":

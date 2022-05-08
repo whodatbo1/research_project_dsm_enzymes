@@ -151,7 +151,7 @@ def decode_schedule_active(instance, v1, v2, v3):
                     potential_end = potential_start + duration + second_co_time
                     if gap > duration and potential_end <= interval_end:
                         found = True
-                        start = interval_start + pot_co_time
+                        start = potential_start
                         end = start + duration
 
             if not found:
@@ -165,11 +165,9 @@ def decode_schedule_active(instance, v1, v2, v3):
 
             res = {"Machine": m, "Job": j, "Product": instance.orders[j]["product"], "Operation": o, "Start": start,
                    "Duration": instance.processingTimes[j, o, m], "Completion": end}
-            # results = pd.concat([results, res], ignore_index=True, axis=0)
             results.append(res)
             bisect.insort(machine_tasks[m], (start, end, curr_enzyme))
             # print(res)
-            # machine_tasks[m].insort((start, end))
             i += 1
     schedule = pd.DataFrame(results)
     schedule.sort_values(by=['Start', 'Machine', 'Job'], inplace=True)
