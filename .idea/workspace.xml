@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="f46addc2-9ca4-452c-adda-f6658672387f" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/classes/schedule.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/schedule.py" afterDir="false" />
-    </list>
+    <list default="true" id="f46addc2-9ca4-452c-adda-f6658672387f" name="Default Changelist" comment="" />
     <list id="a6be71b6-c674-4cb9-9602-8fa13e6f325f" name="Changes by Admin" comment="" />
     <list id="eaf8773b-d808-43d6-a900-562d5cca890a" name="Changes by Tiamo van Eijmeren" comment="" />
     <list id="c3ea7eab-10c3-47f4-b4e0-ac04120fa725" name="Changes by Tim Numan" comment="" />
@@ -218,7 +216,7 @@
       <workItem from="1652170262537" duration="2237000" />
       <workItem from="1652172544148" duration="4453000" />
       <workItem from="1652178535558" duration="2288000" />
-      <workItem from="1652183719605" duration="880000" />
+      <workItem from="1652183719605" duration="1563000" />
     </task>
     <servers />
   </component>
