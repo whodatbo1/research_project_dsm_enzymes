@@ -44,19 +44,19 @@ def compare_schedules(old, new):
 
 schedule = init_schedule.create_schedule(0)
 print(schedule)
-# temperature = 10
-# deltaT = 1
-# while temperature > 0:  # CHECK IF THIS IS A GOOD CONDITION
-#     neighbours = get_neighbours.create_neighbours(schedule)  # FUNCTION DOES NOT YET EXIST
-#     index = random.randrange(0, len(neighbours))
-#     new_schedule = neighbours[index]
-#     if compare_schedules(schedule, new_schedule) > 0:
-#         schedule = new_schedule
-#     else:
-#         delta = compare_schedules(schedule, new_schedule)  # CHECK!!!
-#         r = random.uniform(0, 1)
-#         if r < np.exp(-delta / temperature):
-#             schedule = new_schedule
-#     temperature -= deltaT # Needs checking
-#
-# print(schedule)
+temperature = 10
+deltaT = 1
+while temperature > 0:  # CHECK IF THIS IS A GOOD CONDITION
+    neighbours = get_neighbours.create_neighbours(schedule)  # FUNCTION DOES NOT YET EXIST
+    index = random.randrange(0, len(neighbours))
+    new_schedule = neighbours[index]
+    if compare_schedules(schedule, new_schedule) > 0:
+        schedule = new_schedule
+    else:
+        delta = compare_schedules(schedule, new_schedule)  # CHECK!!!
+        r = random.uniform(0, 1)
+        if r < np.exp(-delta / temperature):
+            schedule = new_schedule
+    temperature -= deltaT # Needs checking
+
+print(schedule)

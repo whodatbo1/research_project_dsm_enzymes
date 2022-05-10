@@ -35,12 +35,14 @@ def create_schedule(instance_num):
     time = np.zeros(len(alg.machines))
     num_list = list(np.arange(0, len(alg.orders)))
     orders = alg.orders
+    v1_2d = []
+    for i in range(len(alg.jobs)):
+        v1_2d.append([])
+    v2 = []
     # variable to keep track of the previous job for change-over times
     prev_job = -1
     # create a loop of all order indices, if list is empty, all orders are scheduled.
     while len(num_list) != 0:
-        # copy the time array onto a temp array, to make that is is not changed unintentionally.
-
         # Randomly select an order containing a job.
         job = -1
         order_index = num_list.pop(random.randrange(len(num_list)))
@@ -53,6 +55,7 @@ def create_schedule(instance_num):
         total_time = 0
         # For each operation, look for the lowest production time, and add that to the time array
         for op in operations:
+            v2.append(job)
             temp = time.copy()
             # Get all machines and retrieve machine with lowest production time + cleaning time
             machines = alg.machineAlternatives[job, op]
@@ -79,6 +82,7 @@ def create_schedule(instance_num):
                         min = temp[i]
                         smallest_index = i
             # Update smallest value in array
+            v1_2d[job].append(smallest_index)
             time[smallest_index] += min
             print(temp)
             print(total_time)
@@ -86,8 +90,13 @@ def create_schedule(instance_num):
             print("\n")
             total_time += min
 
-
         # info for changeover
         prev_job = job
-
-    return time
+    # Flatten the 2d representation of vector v1
+    v1 = []
+    for i in v1_2d:
+        for j in i:
+            v1.append(j)
+    print(v1)
+    print(v2)
+    return v1, v2
