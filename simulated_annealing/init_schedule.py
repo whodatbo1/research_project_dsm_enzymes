@@ -40,7 +40,7 @@ def create_schedule(instance_num):
     # create a loop of all order indices, if list is empty, all orders are scheduled.
     while len(num_list) != 0:
         # copy the time array onto a temp array, to make that is is not changed unintentionally.
-        temp = time.copy()
+
         # Randomly select an order containing a job.
         job = -1
         order_index = num_list.pop(random.randrange(len(num_list)))
@@ -50,22 +50,26 @@ def create_schedule(instance_num):
                 job = i
         # Get operations for the selected job
         operations = alg.operations[job]
+        total_time = 0
         # For each operation, look for the lowest production time, and add that to the time array
         for op in operations:
+            temp = time.copy()
             # Get all machines and retrieve machine with lowest production time + cleaning time
             machines = alg.machineAlternatives[job, op]
+            print(machines)
             for m in machines:
                 p_time = alg.processingTimes[job, op, m]
                 # determine change-over
                 if prev_job >= 0:
                     change_over = alg.changeOvers[m, 'enzyme' + str(prev_job), 'enzyme' + str(job)]
                     p_time += change_over
-                temp[m] += p_time
+                print(p_time)
+                temp[m] += p_time + total_time
             min = 1000  # large number
             smallest_index = -1
             # find smallest production time, and add to time array.
             for i in range(len(temp)):
-                if 0 < temp[i] <= min:
+                if 0 < temp[i] <= min and (i in machines):
                     # If the smallest value is the same, randomly select one of the equal values
                     if temp[i] == min:
                         if random.random() >= 0.5:
@@ -76,6 +80,12 @@ def create_schedule(instance_num):
                         smallest_index = i
             # Update smallest value in array
             time[smallest_index] += min
+            print(temp)
+            print(total_time)
+            print(time)
+            print("\n")
+            total_time += min
+
 
         # info for changeover
         prev_job = job
