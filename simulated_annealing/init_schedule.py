@@ -7,7 +7,7 @@ Pseudocode:
 1. Set time array with length M and initial values 0
 2. Select random job, make sure it's chosen once, and select the first operation
 3. get machines for the specific operation, and add the occupation time to a temp array, based on the time array
-4. compare times in temp array, andget index of lowest, if 2 indexes have same time, random selection
+4. compare times in temp array, and get index of lowest, if 2 indexes have same time, random selection
 5. add selected machine occupation time to the time array as update
 6. repeat step 3-5 for all operation in the job
 7. repeat step 2-6 for all jobs.
