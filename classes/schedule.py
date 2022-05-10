@@ -1,7 +1,7 @@
 from gurobipy import *
 import pandas as pd
 
-class FlexibleJobShop:
+class Schedule:
     def __init__(
             self, makespan, machines_operations, job_order):
         self.makespan = makespan
