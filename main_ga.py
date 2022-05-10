@@ -4,6 +4,7 @@ import importlib.util
 from ga_utils.utils import get_instance_info
 from ga_utils.encode_decode import *
 import pickle
+from datetime import datetime, timedelta
 
 
 def fitness_function(schedule):
@@ -36,10 +37,10 @@ def mutate_schedule(instance, encoded_schedule, mutation_coef: float):
             v1[i] = new_m
         # Determine if we perform mutation type 2 on gene
         elif np.random.rand() < mutation_coef:
-            # coef = np.random.randint(0, len(v1))
-            # placeholder = v1[coef]
-            # v1[coef] = v1[i]
-            # v1[i] = placeholder
+            coef = np.random.randint(0, len(v1))
+            placeholder = v1[coef]
+            v1[coef] = v1[i]
+            v1[i] = placeholder
             pass
         else:
             pass
@@ -60,48 +61,22 @@ def get_new_rep_v2(jobs, v2):
     return new_rep
 
 
-def get_v2_from_new_rep(instance, new_rep_v2):
-    job_vector = np.zeros(len(new_rep_v2), dtype=np.int64)
-    index = 0
-    for job in instance.jobs:
-        op_count = len(instance.operations[job])
-        # print(job, 'aaaaaaa', job_vector[index:(index + op_count)], index)
-        job_vector[index:(index + op_count)] = np.full(op_count, job)
-        index = index + op_count
-    # print('jv', job_vector)
-    # print(new_rep_v2)
+def get_v2_from_new_rep(job_vector, new_rep_v2):
     v2 = [job_vector[i] for i in new_rep_v2]
 
     return np.array(v2)
 
 
-def crossover(instance, schedule_male, schedule_female, i1=None, i2=None):
+def crossover(instance, schedule_male, schedule_female, job_vector, i1=None, i2=None):
     v1_male, v2_male = schedule_male
     v1_female, v2_female = schedule_female
 
-    # print(v2_female)
-    # print(v2_male)
-
     length = len(v1_male)
-    # with open(r'kek.dump', 'wb') as f:
-    #     pickle.dump((v1_male, v2_male, v1_female, v2_female), f)
-
-    # v1_male, v2_male, v1_female, v2_female = pickle.load(open(r'kek.dump', 'rb'))
 
     new_rep_male = get_new_rep_v2(instance.jobs, v2_male)
     new_rep_female = get_new_rep_v2(instance.jobs, v2_female)
 
-    # print('v1_male\n', v1_male)
-    # print('v1_female\n', v1_female)
-    # print('v2_male\n', v2_male)
-    # print('v2_female\n', v2_female)
-    # print('nrm\n', new_rep_male)
-    # print('nrm\n', new_rep_male)
-    # print('nrf\n', new_rep_female)
-
     v1_child = np.full(length, -1, dtype=np.int64)
-    v2_child = np.full(length, -1, dtype=np.int64)
-    v3_child = np.full(length, -1, dtype=np.int64)
 
     indices = sorted(np.random.randint(0, len(v1_male), 2))
     if i1 is None and i2 is None:
@@ -111,9 +86,6 @@ def crossover(instance, schedule_male, schedule_female, i1=None, i2=None):
 
     for ind in new_rep_child[i1:i2]:
         v1_child[ind] = v1_male[ind]
-    # v1_child[i1:i2] = v1_male[i1:i2]
-
-    # print(new_rep_child)
 
     available_indices = np.append(np.arange(0, i1), np.arange(i2, length))
     index = 0
@@ -123,20 +95,18 @@ def crossover(instance, schedule_male, schedule_female, i1=None, i2=None):
             v1_child[new_rep_female[i]] = v1_female[new_rep_female[i]]
             index += 1
 
-    # print(i1, i2)
-    # print(new_rep_child)
-    # print('v1_child\n', v1_child)
-    v2_child = get_v2_from_new_rep(instance, new_rep_child)
-    # print('v2_child\n', v2_child)
+    v2_child = get_v2_from_new_rep(job_vector, new_rep_child)
     return v1_child, v2_child, i1, i2
 
 
 def pipeline(instance_num, size, generations, fitness):
+    start_time = datetime.now()
     fileName = 'FJSP_' + str(instance_num)
     spec = importlib.util.spec_from_file_location('instance', "instances/" + fileName + '.py')
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     instance = mod
+    print('Starting pipeline with instance', str(instance_num) + ', population size', str(size) + ' and max generation count', str(generations) + '...')
     print('Generating starting population...')
     population = generate_starting_population(instance_num, size)
 
@@ -155,7 +125,16 @@ def pipeline(instance_num, size, generations, fitness):
             v3.append(i)
     v3 = np.array(v3, dtype=np.uint64)
 
+    job_vector = np.zeros(len(v3), dtype=np.int64)
+    index = 0
+    for job in instance.jobs:
+        op_count = len(instance.operations[job])
+        job_vector[index:(index + op_count)] = np.full(op_count, job)
+        index = index + op_count
+
     for gen in range(generations):
+        gen_start = datetime.now()
+        decode_schedule_active_time = timedelta()
         parents = np.random.choice(size, parent_count, p=probability_vector)
         print("Generation", gen + 1)
         for i in np.arange(0, len(parents), 2):
@@ -164,17 +143,20 @@ def pipeline(instance_num, size, generations, fitness):
             p1_vectors = (p1[2], p1[3])
             p2_vectors = (p2[2], p2[3])
 
-            v1_child, v2_child, i1, i2 = crossover(instance, p1_vectors, p2_vectors)
+            v1_child, v2_child, i1, i2 = crossover(instance, p1_vectors, p2_vectors, job_vector)
             v1_child, v2_child = mutate_schedule(instance, (v1_child, v2_child, v3), 0.03)
 
+            dsas = datetime.now()
             schedule, v1, v2 = decode_schedule_active(instance, v1_child, v2_child, v3)
-
+            decode_schedule_active_time += datetime.now() - dsas
             population.append((calculate_makespan(schedule), schedule, v1, v2))
 
         population = sorted(population, key=lambda sched: sched[0])[:size]
         print('Min makespan gen', gen, population[0][0])
+        print('Total time elapsed:', datetime.now() - gen_start)
+        print('Decode total time elapsed:', decode_schedule_active_time)
+    print('Total time elapsed:', datetime.now() - start_time)
     print(population[0])
-
 
 def read_static():
     fileName = 'FJSP_' + str(0)
@@ -212,7 +194,7 @@ def read_static():
 def run():
     print("Starting GA...")
 
-    pipeline(1, 100, 100, fitness_function)
+    pipeline(1, 500, 1000, fitness_function)
 
 
 if __name__ == "__main__":
