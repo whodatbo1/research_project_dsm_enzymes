@@ -1,8 +1,10 @@
 import importlib.util
 from classes.milp import FlexibleJobShop
 import pandas as pd
+import numpy as np
 import random
 import simulated_annealing.init_schedule as init_schedule
+from simulated_annealing import get_neighbours
 
 """
 Pseudo-code simulated annealing DSM optimization:
@@ -36,7 +38,7 @@ TODO:
 
 # Compares make spans of old and new
 # Returns difference in make span, when ret > 0 new is more optimal
-def compare_schedule(old, new):
+def compare_schedules(old, new):
     return old - new  # FINISH WHEN SCHEDULE INSTANCE IS DONE!!!!
 
 
