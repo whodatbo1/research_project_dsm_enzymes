@@ -3,3 +3,4 @@ __pycache__/
 *$py.class
 .idea/
 .solutions/
+.idea/workspace.xml

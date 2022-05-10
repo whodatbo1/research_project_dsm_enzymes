@@ -59,14 +59,12 @@ def create_schedule(instance_num):
             temp = time.copy()
             # Get all machines and retrieve machine with lowest production time + cleaning time
             machines = alg.machineAlternatives[job, op]
-            print(machines)
             for m in machines:
                 p_time = alg.processingTimes[job, op, m]
                 # determine change-over
                 if prev_job >= 0:
                     change_over = alg.changeOvers[m, 'enzyme' + str(prev_job), 'enzyme' + str(job)]
                     p_time += change_over
-                print(p_time)
                 temp[m] += p_time + total_time
             min = 1000  # large number
             smallest_index = -1
@@ -84,10 +82,6 @@ def create_schedule(instance_num):
             # Update smallest value in array
             v1_2d[job].append(smallest_index)
             time[smallest_index] += min
-            print(temp)
-            print(total_time)
-            print(time)
-            print("\n")
             total_time += min
 
         # info for changeover
@@ -97,6 +91,8 @@ def create_schedule(instance_num):
     for i in v1_2d:
         for j in i:
             v1.append(j)
-    print(v1)
-    print(v2)
-    return v1, v2
+    v3 = []
+    for i in alg.jobs:
+        for j in alg.operations[i]:
+            v3.append(j)
+    return v1, v2, v3
