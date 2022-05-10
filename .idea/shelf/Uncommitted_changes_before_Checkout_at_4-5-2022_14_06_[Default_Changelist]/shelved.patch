@@ -1,0 +1,19 @@
+Index: main_milp.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import importlib.util\r\nfrom classes.milp import FlexibleJobShop\r\nimport pandas as pd\r\n\r\n# This script reads input instances and solves\r\nnr_instances = 15\r\nfor i in range(0, nr_instances):\r\n    fileName = 'FJSP_' + str(i)\r\n    spec = importlib.util.spec_from_file_location('instance', \"instances/\" + fileName + '.py')\r\n    mod = importlib.util.module_from_spec(spec)\r\n    spec.loader.exec_module(mod)\r\n    alg = FlexibleJobShop(jobs=mod.jobs, machines=mod.machines, processingTimes=mod.processingTimes, machineAlternatives=\r\n    mod.machineAlternatives, operations=mod.operations, instance=fileName, changeOvers=mod.changeOvers, orders=mod.orders)\r\n    alg.build_model(\"solutions/milp/milp_solution_\" + fileName + '.csv')\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main_milp.py b/main_milp.py
+--- a/main_milp.py	(revision 4bdb4292f8c4ba9e01bda8073b5bb1c082cf27e6)
++++ b/main_milp.py	(date 1651663739475)
+@@ -5,7 +5,7 @@
+ # This script reads input instances and solves
+ nr_instances = 15
+ for i in range(0, nr_instances):
+-    fileName = 'FJSP_' + str(i)
++    fileName = 'FJSP_SA_' + str(i)
+     spec = importlib.util.spec_from_file_location('instance', "instances/" + fileName + '.py')
+     mod = importlib.util.module_from_spec(spec)
+     spec.loader.exec_module(mod)
