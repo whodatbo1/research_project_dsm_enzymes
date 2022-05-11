@@ -115,8 +115,13 @@ def decode_schedule(instance, v1, v2, v3):
 # Compares make spans of old and new
 # Returns difference in make span, when ret > 0 new is more optimal
 def compare_schedules(instance, old, new):
+    # print("old: " + str(old))
+    # print("new: " + str(new))
     old_sched = decode_schedule(instance, np.array(old[0]), np.array(old[1]), np.array(old[2]))
     new_sched = decode_schedule(instance, np.array(new[0]), np.array(new[1]), np.array(new[2]))
+    # print("old: " + str(milp_utils.calculate_makespan(old_sched[0])))
+    # print("new: " + str(milp_utils.calculate_makespan(new_sched[0])))
+    # print("\n")
     return milp_utils.calculate_makespan(old_sched[0]) - milp_utils.calculate_makespan(new_sched[0])  # FINISH WHEN SCHEDULE INSTANCE IS DONE!!!!
 
 
@@ -133,8 +138,9 @@ alg = FlexibleJobShop(jobs=mod.jobs, machines=mod.machines, processingTimes=mod.
 schedule = init_schedule.create_schedule(0)
 makespan = decode_schedule(alg, np.array(schedule[0]), np.array(schedule[1]), np.array(schedule[2]))
 print(milp_utils.calculate_makespan(makespan[0]))
+print(schedule)
 
-temperature = 10
+temperature = 20
 deltaT = 1
 while temperature > 0:  # CHECK IF THIS IS A GOOD CONDITION
     neighbours = get_neighbours.create_neighbours(schedule)  # FUNCTION DOES NOT YET EXIST
@@ -145,10 +151,15 @@ while temperature > 0:  # CHECK IF THIS IS A GOOD CONDITION
     else:
         delta = compare_schedules(alg, schedule, new_schedule)  # CHECK!!!
         r = random.uniform(0, 1)
-        if r < np.exp(-delta / temperature):
-            print("test")
+        if r < np.exp(delta / temperature):
+        #     print(r)
+        #     print(np.exp(delta / temperature))
+        #     print(delta)
+        #     print("\n")
             schedule = new_schedule
-        temperature -= deltaT  # Needs checking
+    temperature -= deltaT  # Needs checking
+    middle = decode_schedule(alg, np.array(schedule[0]), np.array(schedule[1]), np.array(schedule[2]))
+    print(milp_utils.calculate_makespan(middle[0]))
 
 res = decode_schedule(alg, np.array(schedule[0]), np.array(schedule[1]), np.array(schedule[2]))
 print(milp_utils.calculate_makespan(res[0]))

@@ -2,10 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="bd583474-dff3-4393-8035-f5aa04767af9" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/solutions/experiments/milp-30-60-180-300" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_4-5-2022_14_06__Default_Changelist_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_4-5-2022_14_06__Default_Changelist_.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main_sa.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_sa.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/simulated_annealing/get_neighbours.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulated_annealing/get_neighbours.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulated_annealing/init_schedule.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulated_annealing/init_schedule.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -65,7 +66,12 @@
       </console-settings>
     </option>
   </component>
-  <component name="RunManager" selected="Python.main_sa">
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\marco\OneDrive\Documents\GitHub\research_project_dsm_enzymes\solutions" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.main_experiment">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="research_project_dsm_enzymes" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -80,6 +86,28 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main_experiment" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="research_project_dsm_enzymes" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main_experiment.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -188,21 +216,22 @@
       <item itemvalue="Python.main_milp" />
       <item itemvalue="Python.main_sa" />
       <item itemvalue="Python.milp_utils" />
+      <item itemvalue="Python.main_experiment" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.main_experiment" />
+        <item itemvalue="Python.main_milp" />
         <item itemvalue="Python.main_sa" />
-        <item itemvalue="Python.main_milp" />
         <item itemvalue="Python.milp_utils" />
         <item itemvalue="Python.main_milp" />
-        <item itemvalue="Python.milp_utils" />
       </list>
     </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="f46addc2-9ca4-452c-adda-f6658672387f" name="Default Changelist" comment="" />
+      <changelist id="bd583474-dff3-4393-8035-f5aa04767af9" name="Default Changelist" comment="" />
       <created>1651155772481</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
@@ -219,6 +248,7 @@
       <workItem from="1652172544148" duration="4453000" />
       <workItem from="1652178535558" duration="2288000" />
       <workItem from="1652183719605" duration="3507000" />
+      <workItem from="1652251668112" duration="4209000" />
     </task>
     <servers />
   </component>
@@ -238,8 +268,8 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$main_sa.coverage" NAME="main_sa Coverage Results" MODIFIED="1652194498680" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$main_milp.coverage" NAME="main_milp Coverage Results" MODIFIED="1651672034410" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$main_sa.coverage" NAME="main_sa Coverage Results" MODIFIED="1652253949482" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$main_milp.coverage" NAME="main_milp Coverage Results" MODIFIED="1652254180873" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$milp_utils.coverage" NAME="milp_utils Coverage Results" MODIFIED="1651156867772" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/classes" />
   </component>
 </project>
