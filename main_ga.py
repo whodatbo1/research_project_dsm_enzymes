@@ -99,7 +99,7 @@ def crossover(instance, schedule_male, schedule_female, job_vector, i1=None, i2=
     return v1_child, v2_child, i1, i2
 
 
-def pipeline(instance_num, size, generations, fitness):
+def pipeline(instance_num, size, generations, fitness, results):
     start_time = datetime.now()
     fileName = 'FJSP_' + str(instance_num)
     spec = importlib.util.spec_from_file_location('instance', "instances/" + fileName + '.py')
@@ -157,6 +157,7 @@ def pipeline(instance_num, size, generations, fitness):
         print('Decode total time elapsed:', decode_schedule_active_time)
     print('Total time elapsed:', datetime.now() - start_time)
     print(population[0])
+    results.append((instance_num, size, generations, datetime.now() - start_time))
 
 def read_static():
     fileName = 'FJSP_' + str(0)
@@ -193,8 +194,9 @@ def read_static():
 
 def run():
     print("Starting GA...")
-
-    pipeline(1, 500, 1000, fitness_function)
+    results = []
+    for i in range(13):
+        pipeline(i, 5, 5, fitness_function, results)
 
 
 if __name__ == "__main__":
