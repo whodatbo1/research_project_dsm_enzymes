@@ -110,8 +110,6 @@ def decode_schedule(instance, v1, v2, v3):
     return sched, v1, v2
 
 
-# WARNING, THIS ALGORITHM IS STILL A DRAFT, MIGHT NEED DRASTIC CHANGES
-
 # Compares make spans of old and new
 # Returns difference in make span, when ret > 0 new is more optimal
 def compare_schedules(instance, old, new):
@@ -122,44 +120,55 @@ def compare_schedules(instance, old, new):
     # print("old: " + str(milp_utils.calculate_makespan(old_sched[0])))
     # print("new: " + str(milp_utils.calculate_makespan(new_sched[0])))
     # print("\n")
-    return milp_utils.calculate_makespan(old_sched[0]) - milp_utils.calculate_makespan(new_sched[0])  # FINISH WHEN SCHEDULE INSTANCE IS DONE!!!!
+    return milp_utils.calculate_makespan(old_sched[0]) - milp_utils.calculate_makespan(
+        new_sched[0])  # FINISH WHEN SCHEDULE INSTANCE IS DONE!!!!
 
 
-# only does stuff with the first instance for now
-file_name = 'FJSP_' + str(0)
-spec = importlib.util.spec_from_file_location('instance', "instances/" + file_name + '.py')
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-alg = FlexibleJobShop(jobs=mod.jobs, machines=mod.machines, processingTimes=mod.processingTimes,
+def run_sa(instance_num):
+    file_name = 'FJSP_' + str(instance_num)
+    spec = importlib.util.spec_from_file_location('instance', "instances/" + file_name + '.py')
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    alg = FlexibleJobShop(jobs=mod.jobs, machines=mod.machines, processingTimes=mod.processingTimes,
                           machineAlternatives=
                           mod.machineAlternatives, operations=mod.operations, instance=file_name,
                           changeOvers=mod.changeOvers, orders=mod.orders)
 
-schedule = init_schedule.create_schedule(0)
-makespan = decode_schedule(alg, np.array(schedule[0]), np.array(schedule[1]), np.array(schedule[2]))
-print(milp_utils.calculate_makespan(makespan[0]))
-print(schedule)
+    schedule = init_schedule.create_schedule(0)
+    makespan = decode_schedule(alg, np.array(schedule[0]), np.array(schedule[1]), np.array(schedule[2]))
+    print(milp_utils.calculate_makespan(makespan[0]))
+    #print(schedule)
 
-temperature = 20
-deltaT = 1
-while temperature > 0:  # CHECK IF THIS IS A GOOD CONDITION
-    neighbours = get_neighbours.create_neighbours(schedule)  # FUNCTION DOES NOT YET EXIST
-    index = random.randrange(0, len(neighbours))
-    new_schedule = neighbours[index]
-    if compare_schedules(alg, schedule, new_schedule) > 0:
-        schedule = new_schedule
-    else:
-        delta = compare_schedules(alg, schedule, new_schedule)  # CHECK!!!
-        r = random.uniform(0, 1)
-        if r < np.exp(delta / temperature):
-        #     print(r)
-        #     print(np.exp(delta / temperature))
-        #     print(delta)
-        #     print("\n")
+    temperature = 10000
+    deltaT = 0.9
+    while temperature > 1:  # CHECK IF THIS IS A GOOD CONDITION
+        neighbours = get_neighbours.create_neighbours(schedule, alg)
+        # index = random.randrange(0, len(neighbours))
+        new_schedule = schedule
+        ms = 1000
+        for n in neighbours:
+            decode_n = decode_schedule(alg, np.array(n[0]), np.array(n[1]), np.array(n[2]))
+            n_mks = milp_utils.calculate_makespan(decode_n[0])
+            if n_mks < ms:
+                ms = n_mks
+                new_schedule = n
+        # new_schedule = neighbours[index]
+        better_schedule = 0
+        worse_schedule_selected = 0
+        if compare_schedules(alg, schedule, new_schedule) > 0:
+            better_schedule += 1
             schedule = new_schedule
-    temperature -= deltaT  # Needs checking
-    middle = decode_schedule(alg, np.array(schedule[0]), np.array(schedule[1]), np.array(schedule[2]))
-    print(milp_utils.calculate_makespan(middle[0]))
+        else:
+            delta = compare_schedules(alg, schedule, new_schedule)
+            r = random.uniform(0, 1)
+            if r < np.exp(delta / temperature):
+                worse_schedule_selected += 1
+                schedule = new_schedule
+        temperature *= deltaT
+        middle = decode_schedule(alg, np.array(schedule[0]), np.array(schedule[1]), np.array(schedule[2]))
 
-res = decode_schedule(alg, np.array(schedule[0]), np.array(schedule[1]), np.array(schedule[2]))
-print(milp_utils.calculate_makespan(res[0]))
+    res = decode_schedule(alg, np.array(schedule[0]), np.array(schedule[1]), np.array(schedule[2]))
+    print(str(milp_utils.calculate_makespan(res[0])) + "\n")
+    # print("better selected: " + str(better_schedule))
+    # print("worst shedule selected: " + str(worse_schedule_selected))
+    return milp_utils.calculate_makespan(res[0])

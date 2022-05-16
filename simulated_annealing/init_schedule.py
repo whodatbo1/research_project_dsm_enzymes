@@ -91,6 +91,7 @@ def create_schedule(instance_num):
     for i in v1_2d:
         for j in i:
             v1.append(j)
+    # Create the 3rd vector needed for decoding
     v3 = []
     for i in alg.jobs:
         for j in alg.operations[i]:
