@@ -233,14 +233,14 @@ def decode_schedule_active(instance, v1, v2, v3):
                 curr_machine_times[m] += co_time
                 start = max(curr_job_times[j], curr_machine_times[m])
                 end = start + duration
-
-            prev_enzyme[m] = instance.orders[j]['product']
+                prev_enzyme[m] = instance.orders[j]['product']
             curr_job_times[j] = max(curr_job_times[j], end)
             curr_machine_times[m] = max(curr_machine_times[m], end)
 
             res = {"Machine": m, "Job": j, "Product": instance.orders[j]["product"], "Operation": o, "Start": start,
                    "Duration": instance.processingTimes[j, o, m], "Completion": end}
             results.append(res)
+            # print(res)
             bisect.insort(machine_tasks[m], (start, end, curr_enzyme))
             i += 1
     schedule = pd.DataFrame(results)
