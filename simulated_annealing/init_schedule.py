@@ -21,20 +21,9 @@ import pandas as pd
 import random
 
 
-def create_schedule(instance_num):
-    # get instance
-    file_name = 'FJSP_' + str(instance_num)
-    spec = importlib.util.spec_from_file_location('instance', "instances/" + file_name + '.py')
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    alg = FlexibleJobShop(jobs=mod.jobs, machines=mod.machines, processingTimes=mod.processingTimes,
-                          machineAlternatives=
-                          mod.machineAlternatives, operations=mod.operations, instance=file_name,
-                          changeOvers=mod.changeOvers, orders=mod.orders)
-    # Create array for the time, a list of the indices of orders and an array containing al orders
+def create_schedule(alg):
     time = np.zeros(len(alg.machines))
-    num_list = list(np.arange(0, len(alg.orders)))
-    orders = alg.orders
+    num_list = list(np.arange(0, len(alg.jobs)))
     v1_2d = []
     for i in range(len(alg.jobs)):
         v1_2d.append([])
@@ -44,12 +33,8 @@ def create_schedule(instance_num):
     # create a loop of all order indices, if list is empty, all orders are scheduled.
     while len(num_list) != 0:
         # Randomly select an order containing a job.
-        job = -1
-        order_index = num_list.pop(random.randrange(len(num_list)))
-        for i in range(len(alg.jobs)):
-            order = orders[order_index].get('product')
-            if order == 'enzyme' + str(i):
-                job = i
+        job_index = num_list.pop(random.randrange(len(num_list)))
+        job = job_index
         # Get operations for the selected job
         operations = alg.operations[job]
         total_time = 0
@@ -63,10 +48,10 @@ def create_schedule(instance_num):
                 p_time = alg.processingTimes[job, op, m]
                 # determine change-over
                 if prev_job >= 0:
-                    change_over = alg.changeOvers[m, 'enzyme' + str(prev_job), 'enzyme' + str(job)]
+                    change_over = alg.changeOvers[m, alg.orders[prev_job].get("product"), alg.orders[job].get("product")]
                     p_time += change_over
                 temp[m] += p_time + total_time
-            min = 1000  # large number
+            min = float('inf')  # large number
             smallest_index = -1
             # find smallest production time, and add to time array.
             for i in range(len(temp)):
@@ -94,6 +79,6 @@ def create_schedule(instance_num):
     # Create the 3rd vector needed for decoding
     v3 = []
     for i in alg.jobs:
-        for j in alg.operations[i]:
+        for j in range(len(alg.operations[i])):
             v3.append(j)
     return v1, v2, v3

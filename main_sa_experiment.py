@@ -1,17 +1,23 @@
+import importlib
+
 from matplotlib import pyplot as plt
 import numpy as np
 
 import main_sa
+from classes.milp import FlexibleJobShop
+from simulated_annealing import graph
+from simulated_annealing.graph import create_graph
 
 
-def run_exp(instance, n_times):
-    x = np.arange(0, n_times)
-    y = np.empty(n_times)
-    for i in range(n_times):
-        y[i] = main_sa.run_sa(instance)
-    plt.title("distrubution of makespans of instance " + str(instance))
-    plt.hist(y, bins=np.arange(y.min(), y.max() + 2))
-    plt.show()
+def run_exp(n_times, temp, nr_instances=13):
+    res = np.empty(nr_instances)
+    for i in range(nr_instances):
+        print("instance: " + str(i))
+        y = np.empty(n_times)
+        for n in range(n_times):
+            y[n] = main_sa.run_sa(i, temp)
+        res[i] = np.min(y)
+    return res
 
 
-run_exp(0, 25)
+
