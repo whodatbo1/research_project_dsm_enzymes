@@ -83,7 +83,7 @@ def run_sa_s(name, temps, n_runs, n_neighbours, n_swaps, nr_instances=13):
     plt.savefig(path + "\\" + name + ".png")
 
 
-def run_sa_g(name, temps, n_runs, n_neighbours, n_swaps, nr_instances=13):
+def run_sa_g(name, temps, n_runs, n_neighbours, nr_instances=13):
     path = os.path.join("solutions/experiments")
     file = open(path + "/"
                        "" + name + ".txt", "a")
@@ -93,14 +93,12 @@ def run_sa_g(name, temps, n_runs, n_neighbours, n_swaps, nr_instances=13):
             print("n times: " + str(n))
             for neigh in n_neighbours:
                 print("num of neighbours: " + str(neigh))
-                for s in n_swaps:
-                    print("amount of swaps = " + str(s))
-                    y_val_sa = run_exp_g(t, n, neigh, s)
-                    file.write("Simulated annealing, t=" + str(t) + " runs=" + str(n) + " neighbours=" + str(
-                        neigh) + " swaps=" + str(s) + "\n")
-                    file.write(str(y_val_sa) + "\n")
-                    plt.plot(np.arange(0, nr_instances), y_val_sa, marker='o',
-                             label="Simulated annealing, t=" + str(t) + " runs=" + str(n) + " neighbours=" + str(neigh) + " swaps=" + str(s))
+                y_val_sa = run_exp_g(t, n, neigh)
+                file.write("Simulated annealing, t=" + str(t) + " runs=" + str(n) + " neighbours=" + str(
+                    neigh) + " swaps=" + str(s) + "\n")
+                file.write(str(y_val_sa) + "\n")
+                plt.plot(np.arange(0, nr_instances), y_val_sa, marker='o',
+                         label="Simulated annealing, t=" + str(t) + " runs=" + str(n) + " neighbours=" + str(neigh))
     file.close()
     plt.ylabel("Lowest makespan found")
     plt.xticks(range(0, nr_instances))
@@ -146,4 +144,4 @@ def run_sa(name, temps, n_runs, n_neighbours, n_swaps, nr_instances=13):
 # run_sa("sa-10_1_1_1", [1000], [1], [100], [100])  # file-name, T, n_runs, neighbours, swaps
 # run_sa("sa_graph_s-g_test", [10000], [10], [10], [10])  # file-name, T, n_runs, neighbours, swaps
 # run_sa_s("sa_s_graph", [1000], [100], [10], [20])  # file-name, T, n_runs, neighbours, swaps
-run_sa_g("sa_g_graph", [1000], [2], [10], [10])  # file-name, T, n_runs, neighbours, swaps
+run_sa_g("sa_g_graph", [1000], [2], [10])  # file-name, T, n_runs, neighbours

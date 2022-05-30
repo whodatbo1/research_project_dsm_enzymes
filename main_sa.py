@@ -148,7 +148,7 @@ def neighbourhood(inst, g, v3, n_neigh):
     return n
 
 
-def run_sa_g(instance_num, temp, n_neigh, swaps):
+def run_sa_g(instance_num, temp, n_neigh):
     file_name = 'FJSP_' + str(instance_num)
     spec = importlib.util.spec_from_file_location('instance', "instances/" + file_name + '.py')
     mod = importlib.util.module_from_spec(spec)
@@ -182,7 +182,7 @@ def run_sa_g(instance_num, temp, n_neigh, swaps):
             g = new_g
         else:
             r = random.uniform(0, 1)
-            if r > np.exp(delta / temperature):
+            if r < np.exp(delta / temperature):
                 g = new_g
         temperature *= deltaT
         # middle = get_critical_path(alg, g)

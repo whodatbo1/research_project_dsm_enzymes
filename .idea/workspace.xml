@@ -2,15 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="bd583474-dff3-4393-8035-f5aa04767af9" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/csv_output.csv" beforeDir="false" afterPath="$PROJECT_DIR$/csv_output.csv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main_experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_experiment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main_sa.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_sa.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main_sa_experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_sa_experiment.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulated_annealing/get_neighbours.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulated_annealing/get_neighbours.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulated_annealing/graph.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulated_annealing/graph.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/solutions/experiments/milp_sa-600.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/solutions/experiments/sa-10000_1_times.png" beforeDir="false" afterPath="$PROJECT_DIR$/solutions/experiments/sa-10000_1_times.png" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -289,7 +283,7 @@
       <workItem from="1653816523890" duration="21849000" />
       <workItem from="1653894789503" duration="4432000" />
       <workItem from="1653900622080" duration="6525000" />
-      <workItem from="1653911486843" duration="15469000" />
+      <workItem from="1653911486843" duration="15686000" />
     </task>
     <servers />
   </component>

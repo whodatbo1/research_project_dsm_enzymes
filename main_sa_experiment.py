@@ -28,7 +28,7 @@ def run_exp_s(temps, n_runs, n_neighbours, n_swaps, nr_instances=13):
     return res
 
 
-def run_exp_g(temps, n_runs, n_neighbours, n_swaps, nr_instances=13):
+def run_exp_g(temps, n_runs, n_neighbours, nr_instances=13):
     res = np.empty(nr_instances)
 
     for i in range(nr_instances):
@@ -36,7 +36,7 @@ def run_exp_g(temps, n_runs, n_neighbours, n_swaps, nr_instances=13):
         t = time.process_time()
         y = np.empty(n_runs)
         for n in range(n_runs):
-            y[n] = main_sa.run_sa_g(i, temps, n_neighbours, n_swaps)
+            y[n] = main_sa.run_sa_g(i, temps, n_neighbours)
 
         res[i] = np.min(y)
         elapsed_time = time.process_time() - t
