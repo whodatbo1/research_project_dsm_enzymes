@@ -1,0 +1,22 @@
+Simulated annealing, t=100000 runs=10 neighbours=10 swaps=10
+[ 31.  53.  73. 100. 109. 155. 165. 189. 202. 228. 243. 294. 290.]
+Simulated annealing, t=10000 runs=1 neighbours=100 swaps=100
+[ 35.  63. 105. 104. 137. 162. 192. 185. 218. 252. 266. 299. 362.]
+Simulated annealing, t=100000 runs=1 neighbours=100 swaps=100
+[ 27.  65.  86. 102. 152. 140. 187. 216. 222. 236. 300. 293. 316.]
+Simulated annealing, t=100000 runs=1 neighbours=100 swaps=100
+[ 26.  63.  82. 105. 108. 150. 178. 224. 233. 245. 250. 299. 327.]
+Simulated annealing, t=100000 runs=1 neighbours=1000 swaps=20
+[ 25.  45.  70.  85. 127. 140. 206. 192. 210. 249. 279. 303. 350.]
+Simulated annealing, t=100000 runs=1 neighbours=10 swaps=20
+[ 36.  55.  70.  91.  96. 151. 148. 155. 185. 202. 210. 225. 249.]
+Simulated annealing, t=100000 runs=1 neighbours=10 swaps=20
+[ 36.  82.  87.  93. 141. 199. 173. 230. 221. 229. 262. 310. 324.]
+Simulated annealing, t=100000 runs=1 neighbours=10 swaps=20
+[ 44.  58.  77. 118. 146. 160. 207. 197. 248. 257. 316. 345. 368.]
+Simulated annealing, t=100000 runs=1 neighbours=10 swaps=20
+[ 39.  62.  78. 134. 135. 156. 166. 196. 262. 276. 297. 276. 331.]
+Simulated annealing, t=1000000 runs=1 neighbours=10 swaps=20
+[ 40.  60.  92. 151. 132. 134. 182. 181. 248. 210. 315. 331. 342.]
+Simulated annealing, t=1000 runs=1 neighbours=10 swaps=20
+[ 37.  94.  99.  99. 128. 142. 183. 187. 238. 254. 329. 358. 366.]

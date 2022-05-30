@@ -2,21 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="bd583474-dff3-4393-8035-f5aa04767af9" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/simulated_annealing/graph.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/csv_output.csv" beforeDir="false" afterPath="$PROJECT_DIR$/csv_output.csv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main_experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_experiment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main_sa.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_sa.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main_sa_experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_sa_experiment.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/simulated_annealing/get_neighbours.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulated_annealing/get_neighbours.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulated_annealing/init_schedule.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulated_annealing/init_schedule.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/solutions/experiments/milp-30-60-180-300" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/solutions/experiments/milp-30-60-180-300.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/solutions/milp/milp_solution_FJSP_4_30s.csv" beforeDir="false" afterPath="$PROJECT_DIR$/solutions/milp/milp_solution_FJSP_4_30s.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/solutions/milp/milp_solution_FJSP_5_30s.csv" beforeDir="false" afterPath="$PROJECT_DIR$/solutions/milp/milp_solution_FJSP_5_30s.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/solutions/milp/milp_solution_FJSP_6_30s.csv" beforeDir="false" afterPath="$PROJECT_DIR$/solutions/milp/milp_solution_FJSP_6_30s.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/solutions/milp/milp_solution_FJSP_7_30s.csv" beforeDir="false" afterPath="$PROJECT_DIR$/solutions/milp/milp_solution_FJSP_7_30s.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulated_annealing/graph.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulated_annealing/graph.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/solutions/experiments/milp_sa-600.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/solutions/experiments/sa-10000_1_times.png" beforeDir="false" afterPath="$PROJECT_DIR$/solutions/experiments/sa-10000_1_times.png" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -131,9 +125,6 @@
       <module name="research_project_dsm_enzymes" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="true" />
@@ -245,8 +236,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.main_experiment" />
-        <item itemvalue="Python.main_sa_experiment" />
         <item itemvalue="Python.main_sa" />
+        <item itemvalue="Python.main_sa_experiment" />
         <item itemvalue="Python.graph" />
         <item itemvalue="Python.main_milp" />
       </list>
@@ -291,6 +282,14 @@
       <workItem from="1653308406381" duration="21433000" />
       <workItem from="1653375809598" duration="10788000" />
       <workItem from="1653407857950" duration="6725000" />
+      <workItem from="1653470658326" duration="13159000" />
+      <workItem from="1653484967362" duration="5415000" />
+      <workItem from="1653644056234" duration="24986000" />
+      <workItem from="1653729934613" duration="8922000" />
+      <workItem from="1653816523890" duration="21849000" />
+      <workItem from="1653894789503" duration="4432000" />
+      <workItem from="1653900622080" duration="6525000" />
+      <workItem from="1653911486843" duration="15469000" />
     </task>
     <servers />
   </component>
@@ -314,8 +313,18 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/simulated_annealing/graph.py</url>
-          <line>152</line>
-          <option name="timeStamp" value="15" />
+          <line>167</line>
+          <option name="timeStamp" value="18" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/simulated_annealing/graph.py</url>
+          <line>157</line>
+          <option name="timeStamp" value="19" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/simulated_annealing/graph.py</url>
+          <line>91</line>
+          <option name="timeStamp" value="24" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -326,12 +335,17 @@
         </breakpoint>
       </default-breakpoints>
     </breakpoint-manager>
+    <watches-manager>
+      <configuration name="PythonConfigurationType">
+        <watch expression="outgoingEdges" />
+      </configuration>
+    </watches-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$main_sa.coverage" NAME="main_sa Coverage Results" MODIFIED="1652971306240" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$main_sa.coverage" NAME="main_sa Coverage Results" MODIFIED="1653927171673" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$main_milp.coverage" NAME="main_milp Coverage Results" MODIFIED="1652254180873" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$main_experiment.coverage" NAME="main_experiment Coverage Results" MODIFIED="1653309743168" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$main_sa_experiment.coverage" NAME="main_sa_experiment Coverage Results" MODIFIED="1653313477834" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$main_experiment.coverage" NAME="main_experiment Coverage Results" MODIFIED="1653906398498" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/research_project_dsm_enzymes$milp_utils.coverage" NAME="milp_utils Coverage Results" MODIFIED="1651156867772" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/classes" />
   </component>
 </project>

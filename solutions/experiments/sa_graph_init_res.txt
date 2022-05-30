@@ -1,0 +1,2 @@
+Simulated annealing, t=10000 runs=1 neighbours=0 swaps=0
+[ 25.  43.  69.  78.  99. 119. 133. 155. 165. 174. 206. 216. 225.]

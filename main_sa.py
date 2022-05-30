@@ -8,7 +8,9 @@ import numpy as np
 import random
 import simulated_annealing.init_schedule as init_schedule
 from simulated_annealing import get_neighbours
-from simulated_annealing.graph import create_graph, create_machine_edges, get_critical_path, k_insertion
+from simulated_annealing.get_neighbours import create_neighbours
+from simulated_annealing.graph import create_graph, create_machine_edges, get_critical_path, k_insertion, \
+    get_data_frame, get_job_op
 
 """
 Pseudo-code simulated annealing DSM optimization:
@@ -127,21 +129,26 @@ def compare_schedules(instance, old, new):
         new_sched[0])
 
 
-def compare_graphs(inst, old, new):
-    return get_critical_path(inst, old) - get_critical_path(inst, new)
+def compare_graphs(old, new):
+    return get_critical_path(old)[0] - get_critical_path(new)[0]
+    # old_ms = milp_utils.calculate_makespan(get_data_frame(old, inst))
+    # new_ms = milp_utils.calculate_makespan(get_data_frame(new, inst))
+    # return old_ms - new_ms
 
 
-def neighbourhood(inst, s, v3):
-    g = create_graph(inst, s[0], s[1], s[2])
-    g = create_machine_edges(inst, s[0], s[2], g)
+def neighbourhood(inst, g, v3, n_neigh):
     n = []
-    for i in range(25):
-        node = random.randrange(0, len(v3))
-        n.append(k_insertion(inst, g, v3, node))
+    g_n = g
+    for i in range(n_neigh):
+        path = get_critical_path(g)[1].copy()
+        for v in path:
+            for pos in range(len(inst.machineAlternatives[get_job_op(v3, v), v3[v]])):
+                g_n = k_insertion(inst, g, v3, v, pos)
+                n.append(g_n)
     return n
 
 
-def run_sa(instance_num, temp):
+def run_sa_g(instance_num, temp, n_neigh, swaps):
     file_name = 'FJSP_' + str(instance_num)
     spec = importlib.util.spec_from_file_location('instance', "instances/" + file_name + '.py')
     mod = importlib.util.module_from_spec(spec)
@@ -155,37 +162,100 @@ def run_sa(instance_num, temp):
 
     g = create_graph(alg, s[0], s[1], s[2])
     g = create_machine_edges(alg, s[0], s[2], g)
-
     temperature = temp
-    deltaT = 0.9
+    deltaT = 0.75
+    found_better = 0
     while temperature > 1:
-        neighbours = neighbourhood(alg, s, s[2])
-        #new_schedule = schedule
-        new_g = g
-        ms = 10000
-        for n in neighbours:
-            # decode_n = decode_schedule(alg, np.array(n[0]), np.array(n[1]), np.array(n[2]))
-            # n_mks = milp_utils.calculate_makespan(decode_n[0])
-            n_mks = get_critical_path(alg, n)
-            if n_mks < ms:
-                ms = n_mks
-                #new_schedule = n
-                new_g = n
-        # if compare_schedules(alg, schedule, new_schedule) > 0:
-            # schedule = new_schedule
-        if compare_graphs(alg, g, new_g) > 0:
+        neighbours = neighbourhood(alg, g, s[2], n_neigh)
+        new_g = random.choice(neighbours)
+        # ms = 1000
+        # for n in neighbours:
+        #     n_mks = get_critical_path(n)[0]
+        #     if n_mks < ms:
+        #         ms = n_mks
+        #         new_g = n
+        delta = compare_graphs(g, new_g)
+        if delta > 0:
+            found_better += 1
+            print("old: " + str(get_critical_path(g)))
+            print("new: " + str(get_critical_path(new_g)))
             g = new_g
         else:
-            # delta = compare_schedules(alg, schedule, new_schedule)
-            delta = compare_graphs(alg, g, new_g)
             r = random.uniform(0, 1)
-            if r < np.exp(delta / temperature):
-                # schedule = new_schedule
+            if r > np.exp(delta / temperature):
                 g = new_g
         temperature *= deltaT
-
-    # res = decode_schedule(alg, np.array(schedule[0]), np.array(schedule[1]), np.array(schedule[2]))
-    # return milp_utils.calculate_makespan(res[0])
-    res = get_critical_path(alg, g)
+        # middle = get_critical_path(alg, g)
+        # print("middle makespan: " + str(middle))
+    print("better found: " + str(found_better))
+    res = get_critical_path(g)[0]
     return res
 
+
+def run_sa_s(instance_num, temp, n_neigh, swaps):
+    file_name = 'FJSP_' + str(instance_num)
+    spec = importlib.util.spec_from_file_location('instance', "instances/" + file_name + '.py')
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    alg = FlexibleJobShop(jobs=mod.jobs, machines=mod.machines, processingTimes=mod.processingTimes,
+                          machineAlternatives=
+                          mod.machineAlternatives, operations=mod.operations, instance=file_name,
+                          changeOvers=mod.changeOvers, orders=mod.orders)
+
+    s = init_schedule.create_schedule(alg)
+
+    g = create_graph(alg, s[0], s[1], s[2])
+    g = create_machine_edges(alg, s[0], s[2], g)
+    temperature = temp
+    deltaT = 0.75
+    found_better = 0
+    while temperature > 1:
+        neighbours = create_neighbours(s, alg, n_neigh, swaps)
+        new_schedule = random.choice(neighbours)
+        ms = 1000
+        # for n in neighbours:
+        #     decode_n = decode_schedule(alg, np.array(n[0]), np.array(n[1]), np.array(n[2]))
+        #     n_mks = milp_utils.calculate_makespan(decode_n[0])
+        #     if n_mks < ms:
+        #         ms = n_mks
+        #         new_schedule = n
+        delta = compare_schedules(alg, s, new_schedule)
+        if delta > 0:
+            found_better += 1
+            s = new_schedule
+        else:
+            r = random.uniform(0, 1)
+            if r > np.exp(delta / temperature):
+                s = new_schedule
+        temperature *= deltaT
+
+    res = decode_schedule(alg, np.array(s[0]), np.array(s[1]), np.array(s[2]))
+    return milp_utils.calculate_makespan(res[0])
+
+# print("graph neighbours")
+# file_name = 'FJSP_' + str(0)
+# spec = importlib.util.spec_from_file_location('instance', "instances/" + file_name + '.py')
+# mod = importlib.util.module_from_spec(spec)
+# spec.loader.exec_module(mod)
+# alg = FlexibleJobShop(jobs=mod.jobs, machines=mod.machines, processingTimes=mod.processingTimes,
+#                       machineAlternatives=
+#                       mod.machineAlternatives, operations=mod.operations, instance=file_name,
+#                       changeOvers=mod.changeOvers, orders=mod.orders)
+#
+# s = init_schedule.create_schedule(alg)
+# v3 = s[2]
+# g = create_graph(alg, s[0], s[1], s[2])
+# g = create_machine_edges(alg, s[0], s[2], g)
+# for i in range(1):
+#     c_p = get_critical_path(g)
+#     # print(g.machine_edges)
+#     # print(g.machines)
+#     print(c_p)
+#     for v in c_p[1]:
+#         for pos in range(len(alg.machineAlternatives[get_job_op(v3, v), v3[v]])):
+#             g_n = k_insertion(alg, g, s[2], v, pos)
+#     # print(g_n.machine_edges)
+#     # print(g_n.machines)
+#     print(str(get_critical_path(g_n)) + "\n")
+#
+#

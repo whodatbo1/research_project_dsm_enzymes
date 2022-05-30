@@ -1,0 +1,4 @@
+[ 22.  39.  64.  76.  99. 103. 132. 136. 141. 167. 183. 187. 208.]
+Simulated annealing, t=1 runs=1 neighbours=0 swaps=1
+[ 22.  39.  55.  70.  83.  96. 110. 124. 143. 156. 166. 182. 194.]
+Simulated annealing, t=10 runs=1 neighbours=1 swaps=1
