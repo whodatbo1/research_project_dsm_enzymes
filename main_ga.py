@@ -1,10 +1,8 @@
-import pygad
 import numpy as np
 import importlib.util
-from ga_utils.utils import get_instance_info
 from ga_utils.encode_decode import *
 import pickle
-from datetime import datetime, timedelta
+from datetime import datetime
 import bisect
 from heapq import merge
 
@@ -12,6 +10,13 @@ from heapq import merge
 def fitness_function(schedule):
     return calculate_makespan(schedule)
 
+
+def get_instance_info(instance_num: int):
+    fileName = 'FJSP_' + str(instance_num)
+    spec = importlib.util.spec_from_file_location('instance', "instances/" + fileName + '.py')
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 # There are 2 types of mutations
 # 1. Any machine assignment can be swapped for another machine (v1)
@@ -29,24 +34,13 @@ def mutate_schedule(instance, encoded_schedule, job_vector, mutation_coef: float
             new_m = np.random.choice(instance.machineAlternatives[j, op])
             v1[i] = new_m
         # Determine if we perform mutation type 2 on gene
-        # elif np.random.rand() < mutation_coef:
-        #     coef = np.random.randint(0, len(v2))
-        #     placeholder = v2[coef]
-        #     v2[coef] = v2[i]
-        #     v2[i] = placeholder
-        # Determine if we perform mutation type 3 on gene
         elif np.random.rand() < mutation_coef:
-            # print('v2 b4', v2)
             coef = np.random.randint(0, len(v2))
             placeholder = v2[i]
-            # v2[coef] = v2[i]
-            # v2[i] = placeholder
             v2 = v2.tolist()
-            # print(v2.pop(i))
             del v2[i]
             v2.insert(coef, placeholder)
             v2 = np.array(v2)
-            # print('v2 after', v2)
         else:
             pass
 
@@ -104,46 +98,8 @@ def crossover(instance, schedule_male, schedule_female, job_vector):
     return v1_child, v2_child, i1, i2
 
 
-def merge_mine(left, right):
-    left = left.copy()
-    right = right.copy()
-    # combined = np.zeros((len(left) + len(right)))
-    combined = []
-    i = 0
-    while left or right:
-        if right:
-            print('l', right[-1][0])
-        if left:
-            print('r', left[-1][0])
-        if not left:
-            combined.append(right[::-1])
-            right = []
-        elif not right:
-            combined.append(left[::-1])
-            left = []
-        elif left[-1][0] < right[-1][0]:
-            combined.append(right.pop())
-        else:
-            combined.append(left.pop())
-        i += 1
-
-    return combined[::-1]
-
-def pipeline(instance_num, size, generations, fitness, results):
-    start_time = datetime.now()
-
-    fileName = 'FJSP_' + str(instance_num)
-    spec = importlib.util.spec_from_file_location('instance', "instances/" + fileName + '.py')
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    instance = mod
-
-    print('Starting pipeline with instance', str(instance_num) + ', population size', str(size) + ' and max generation count', str(generations) + '...')
-    print('Generating starting population...')
-
-    population = generate_starting_population(instance_num, size)
-    population = sorted(population, key=lambda sched: sched[0])
-
+# Initializes some parameters before we run the GA
+def initialize_pipeline(size, instance):
     parent_count = int(size / 2)
     if parent_count % 2 == 1:
         parent_count += 1
@@ -164,24 +120,43 @@ def pipeline(instance_num, size, generations, fitness, results):
         job_vector[index:(index + op_count)] = np.full(op_count, job)
         index = index + op_count
 
+    return parent_count, v3, job_vector
+
+
+# Main GA pipeline
+def pipeline(instance_num, size, generations, fitness):
+    start_time = datetime.now()
+
+    instance = get_instance_info(instance_num)
+
+    print('Starting pipeline with instance', str(instance_num) + ', population size', str(size) + ' and max generation count', str(generations) + '...')
+    print('Generating starting population...')
+
+    population = generate_starting_population(instance_num, size)
+
+    parent_count, v3, job_vector = initialize_pipeline(size, instance)
+
     tie_breaker = -size - 1
+
+    # For each generation we store the Minimum Makespan and the Average Makespan
+    results = {}
+
     # Perform GA
     for gen in range(generations):
         probability_vector = np.array(population)[:, 0].astype(np.float64)
         probability_vector = (np.max(probability_vector) - probability_vector) / (
                     np.max(probability_vector) - np.min(probability_vector))
         probability_vector = probability_vector / np.sum(probability_vector)
-        # print(probability_vector)
+
         print("Generation", gen + 1, '...')
 
         # Timing
         gen_start = datetime.now()
-        decode_schedule_active_time = timedelta()
 
         # Selection
         parents = np.random.choice(size, parent_count, p=probability_vector)
 
-        elite_size = int(size/20)
+        elite_size = int(size/10)
         non_elite_size = size - elite_size
         elites = population[:elite_size]
         non_elites = population[elite_size:]
@@ -196,13 +171,10 @@ def pipeline(instance_num, size, generations, fitness, results):
             # Crossover
             v1_child, v2_child, i1, i2 = crossover(instance, p1_vectors, p2_vectors, job_vector)
 
-            decode_schedule_active_start = datetime.now()
             schedule, v1, v2 = decode_schedule_active(instance, v1_child, v2_child, v3)
-            decode_schedule_active_time += datetime.now() - decode_schedule_active_start
 
-            # population.append((fitness(schedule), schedule, v1_child, v2_child))
             bisect.insort(children, (fitness(schedule), tie_breaker, schedule, v1_child, v2_child))
-            # print(tie_breaker)
+
             tie_breaker -= 1
 
         # Mutation
@@ -220,19 +192,23 @@ def pipeline(instance_num, size, generations, fitness, results):
 
         population = list(merge(next_gen_population, elites))
 
-        print('Min makespan gen', gen + 1, population[0][0])
-        print('Total time elapsed:', datetime.now() - gen_start)
-        print('Decode total time elapsed:', decode_schedule_active_time)
-        sum = 0
+        makespan_sum = 0
         for i in population:
-            sum += i[0]
-        print('AVG makespan gen', gen + 1, sum/size)
-        #
-        results.append((size, generations, gen, population[0][0], sum/size))
+            makespan_sum += i[0]
+        average_makespan = makespan_sum/size
+        minimum_makespan = population[0][0]
+
+        print('Minimum makespan gen', gen + 1, minimum_makespan)
+        print('Total time elapsed:', datetime.now() - gen_start)
+        print('Average makespan gen', gen + 1, average_makespan)
+
+        # results.append((size, generations, gen, population[0][0], sum/size))
+        results[gen] = {'min': minimum_makespan, 'avg': average_makespan}
 
     print('Total time elapsed:', datetime.now() - start_time)
     print(population[0])
-    # results.append((instance_num, size, generations, datetime.now() - start_time))
+    return results
+
 
 def read_static():
     fileName = 'FJSP_' + str(0)
@@ -269,21 +245,19 @@ def read_static():
 
 def run():
     print("Starting GA...")
-    results = []
+    results = {}
     # Generation count, Population size, makespan
     gen_count = [100, 200, 300, 400, 500]
-    pop_size = [50, 100, 200, 400, 800]
+    pop_size = [50, 100]
     gen_count = [100]
     # pop_size = [50]
-    for g in gen_count:
-        for s in pop_size:
-            pipeline(1, s, g, fitness_function, results)
+    for s in pop_size:
+        for g in gen_count:
+            results[(s, g)] = pipeline(1, s, g, fitness_function)
     with open('res.csv', 'wb') as f:
         pickle.dump(results, f)
-    # for i in range(1, 13):
-    #     pipeline(i, 500, 1000, fitness_function, results)
-    # print(results)
 
 
 if __name__ == "__main__":
     run()
+

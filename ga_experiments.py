@@ -1,0 +1,20 @@
+import numpy as np
+import pandas as pd
+import pickle
+import time
+from main_ga import pipeline, fitness_function
+
+
+def obtain_convergence_plot_data(instance_num: int):
+    population_sizes = [50]
+    generation_counts = [100]
+    results = {}
+    for size in population_sizes:
+        for generation_count in generation_counts:
+            results[(size, generation_count)] = pipeline(instance_num, size, generation_count, fitness_function)
+    timestr = time.strftime("%Y_%m_%d_%H-%M-%S")
+    with open('./ga_results/results_' + timestr + '.csv', 'wb') as f:
+        pickle.dump(results, f)
+
+
+obtain_convergence_plot_data(1)
