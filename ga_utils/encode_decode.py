@@ -169,19 +169,25 @@ def decode_schedule(instance, v1, v2, v3):
 def decode_schedule_active(instance, v1, v2, v3):
     # Keep track of the max completion time for each machine after we insert an operation
     curr_machine_times = {m: 0 for m in instance.machines}
+
     # Keep track of the max completion time for each job after we insert an operation
     curr_job_times = {j: 0 for j in instance.jobs}
+
     # Keep track of the enzyme of the previous operation
     prev_enzyme = {m: None for m in instance.machines}
-    results = []
+
     # Keep track of each operation for each machine
     # machine_tasks[m] contains a list of tuples [(start, end, enzyme), ...]
     machine_tasks = {m: [(0, 0, None)] for m in instance.machines}
+
     # The index of the first operation for each job
     init_indices = np.where(v3 == 0)[0]
+
     # Keep track of the index of the last completed operation for each job
     op_index = {j: 0 for j in instance.jobs}
+
     i = 0
+    results = []
 
     for job in instance.jobs:
         for op in instance.operations[job]:
@@ -209,21 +215,27 @@ def decode_schedule_active(instance, v1, v2, v3):
             # Go through all the gaps and check if it fits
             if len(machine_tasks[m]) >= 2:
                 for k in range(1, len(machine_tasks[m])):
-                    # Calculate potential change over time if we insert operation in this gap
-                    pot_co_time = 0
-                    enz = machine_tasks[m][k - 1][2]
-                    if enz is not None:
-                        pot_co_time = instance.changeOvers[(m, enz, curr_enzyme)]
+                    # Calculate change over times if we insert operation in this gap
+                    first_change_over_time = 0
+                    enzyme_of_previous_operation = machine_tasks[m][k - 1][2]
+                    if enzyme_of_previous_operation is not None:
+                        first_change_over_time = instance.changeOvers[(m, enzyme_of_previous_operation, curr_enzyme)]
+
+                    second_change_over_time = instance.changeOvers[(m, curr_enzyme, machine_tasks[m][k][2])]
 
                     interval_start = machine_tasks[m][k - 1][1]
                     interval_end = machine_tasks[m][k][0]
 
-                    gap = interval_end - interval_start - pot_co_time
+                    gap = interval_end - interval_start - first_change_over_time - second_change_over_time
 
-                    potential_start = max(curr_job_times[j], interval_start) + pot_co_time
-                    second_co_time = instance.changeOvers[(m, curr_enzyme, machine_tasks[m][k][2])]
-                    potential_end = potential_start + duration + second_co_time
-                    if gap > duration and potential_end <= interval_end:
+                    if gap < duration:
+                        continue
+
+                    potential_start = max(curr_job_times[j], interval_start) + first_change_over_time
+
+                    potential_end = potential_start + duration + second_change_over_time
+
+                    if potential_end <= interval_end:
                         found = True
                         start = potential_start
                         end = start + duration
@@ -234,6 +246,7 @@ def decode_schedule_active(instance, v1, v2, v3):
                 start = max(curr_job_times[j], curr_machine_times[m])
                 end = start + duration
                 prev_enzyme[m] = instance.orders[j]['product']
+
             curr_job_times[j] = max(curr_job_times[j], end)
             curr_machine_times[m] = max(curr_machine_times[m], end)
 
@@ -244,8 +257,8 @@ def decode_schedule_active(instance, v1, v2, v3):
             bisect.insort(machine_tasks[m], (start, end, curr_enzyme))
             i += 1
     schedule = pd.DataFrame(results)
-    schedule.sort_values(by=['Start', 'Machine', 'Job'], inplace=True)
-    schedule.to_csv('csv_output.csv', index=False)
+    # schedule.sort_values(by=['Start', 'Machine', 'Job'], inplace=True)
+    # schedule.to_csv('csv_output.csv', index=False)
     # c = check_valid(schedule)
     # if not c:
     #     print(repr(v1))
@@ -309,7 +322,7 @@ def generate_starting_population(instance_num, size):
     for i in range(size):
         v1, v2 = generate_random_schedule_encoding(instance)
         schedule, v1, v2 = decode_schedule_active(instance, v1, v2, v3)
-        population.append((calculate_makespan(schedule), schedule, v1, v2))
+        population.append((calculate_makespan(schedule), -i, schedule, v1, v2))
     population = sorted(population, key=lambda sched: sched[0])
     return population
 
