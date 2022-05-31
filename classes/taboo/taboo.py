@@ -1,13 +1,28 @@
 from operator import attrgetter
-from instance import instance
-from schedule import schedule
-import numpy as np
+import instance
+import graphSchedule
 
+def tabu_solve():
+    solution = []
+    for i in range(0, 13):
+        steps = 1
+        steps_improved = 5
+        tabu_length = 10
+        neighborhood_size = 100
+        try:
+            s = fjsProblem(i, tabu_length, steps, steps_improved, neighborhood_size)
+            m = s.makeSpan
+            print((i, m))
+            solution.append((i, m))
+        except:
+            # Currently: store nothing in case no feasible solution is found in the time limit
+            pass
+    return solution
 
-def fjsProblem(i, tabu_length, steps, steps_improved):
+def fjsProblem(i, tabu_length, steps, steps_improved, neighborhood_size):
     # obatin the initial schedule and makespan from the instance
     inst = instance(i)
-    initial = inst.global_selection_initial_schedule()
+    initial = inst.globalSelectionInitialSchedule()
 
     # set up values for the optimal schedule
     optimal = initial
@@ -22,7 +37,7 @@ def fjsProblem(i, tabu_length, steps, steps_improved):
     # run the loop as long as none of the stopping conditions are met
     while (s < steps and s_improved < steps_improved):
         # get a neighborhood list of schedules and their makespans
-        neighborhood = current.neigborhoodAssignment()
+        neighborhood = current.getNeighborhoodAssignment(neighborhood_size)
 
         # find the best move that is not taboo
         move = max(neighborhood, key=attrgetter("makeSpan"))
@@ -36,7 +51,7 @@ def fjsProblem(i, tabu_length, steps, steps_improved):
         # put the last move in the tabu list and then make the next one
         tabu.append(current)
         if (len(tabu) > tabu_length):
-            tabu.pop()
+            tabu.pop(0)
 
         # update all tracking values if necessary
         current = jsp_move
@@ -52,7 +67,7 @@ def fjsProblem(i, tabu_length, steps, steps_improved):
     return optimal
     
 
-def jsProblem(sched: schedule, tabu_length, steps, steps_improved):
+def jsProblem(sched: graphSchedule, tabu_length, steps, steps_improved, neighborhood_size):
     # set up values for the optimal schedule
     optimal = sched
     optimal_value = sched.makeSpan
@@ -66,7 +81,7 @@ def jsProblem(sched: schedule, tabu_length, steps, steps_improved):
     # run the loop as long as none of the stopping conditions are met
     while (s < steps and s_improved < steps_improved):
         # get a neighborhood list of schedules and their makespans
-        neighborhood = current.neighborhoodSequencing()
+        neighborhood = current.getNeighborhoodSequencing(neighborhood_size)
 
         # find the best move that is not taboo
         move = max(neighborhood, key=attrgetter("makeSpan"))
@@ -77,7 +92,7 @@ def jsProblem(sched: schedule, tabu_length, steps, steps_improved):
         # put the last move in the tabu list and then make the next one
         tabu.append(current)
         if (len(tabu) > tabu_length):
-            tabu.pop()
+            tabu.pop(0)
 
         # update all tracking values if necessary
         current = move

@@ -1,8 +1,18 @@
 import numpy as np
 import pandas as pd
+import itertools as it
 from instance import instance
 
+
 # two-vector representation of a schedule
+# inst: the instance to which the schedule belongs to
+# v1: list stating the machine on which each operation of each job is performed
+# v2: list determining the order in which operations are performed
+# dataFrame: dataframe representation of the current schedule
+# makeSpan: the total amount of time needed to finish all jobs with the current schedule
+# machineEdges: dictionary keeping track of all operations performed on the same machine
+# chosenEdges: dictionary keeping track of all edges in the graph representation of the schedule
+# criticalPath: list of nodes in the graph that contribute to the makespan of the schedule
 class schedule:
     def __init__(self, inst: instance, v1, v2):
         self.inst = inst
@@ -10,7 +20,7 @@ class schedule:
         self.v2 = v2
         self.dataFrame = self.getDataframe()
         self.makeSpan = self.calculateMakespan()
-        self.possibleEdges, self.chosenEdges = self.addScheduleEdges()
+        self.machineEdges, self.chosenEdges = self.addScheduleEdges()
         self.criticalPath = self.getCriticalPath(0, 0)
 
     # calculates the makespan of a schedule from a dataFrame schedule
@@ -65,7 +75,7 @@ class schedule:
     # possible edges keeep track of all possible combinations of schedules for each machine
     # chosen edges (subset of possible edges) are the order in which operations are performed on each machine
     def addScheduleEdges(self):
-        possibleEdges = self.inst.edges # edges connecting all operations on the same machine
+        machineEdegs = {} # edges connecting all operations on the same machine
         chosenEdges = self.inst.edges # edges determining the order of operations on a machine
 
         opsOnMachine = [] # list of which operations are on which machine
@@ -88,8 +98,8 @@ class schedule:
                 changeOver10 = self.inst.changeOvers((m, enzyme1, enzyme0))
 
                 # add all possible edges
-                possibleEdges[op] += [(opsOnMachine[i][1], changeOver01)]
-                possibleEdges[opsOnMachine[i][1]] += [(op, changeOver10)]
+                machineEdegs[op] += [(opsOnMachine[i][1], changeOver01)]
+                machineEdegs[opsOnMachine[i][1]] += [(op, changeOver10)]
 
                 # add the precedence constraint edges
                 if (i > 0 and i == len(opsOnMachine[m] - 1)):
@@ -99,7 +109,7 @@ class schedule:
             opsOnMachine[m].append((j, op))
             opInJob[j] += 1
 
-        return possibleEdges, chosenEdges
+        return machineEdegs, chosenEdges
 
     def getCriticalPath(self, current, cost):
 
@@ -124,10 +134,14 @@ class schedule:
             if (path[-1] == self.inst.nodes[len(self.inst.nodes) - 1]):
                 return path
             return []
+        return []
 
 
     def neigborhoodAssignment(self):
         return [self, self]
 
     def neighborhoodSequencing(self):
-        return [self, self]
+        result = []
+
+        for node in self.criticalPath:
+            orderings = it.permutations(self.machineEdges[node])
