@@ -1,9 +1,11 @@
 import numpy as np
-from .utils import *
 import pandas as pd
 from datetime import datetime
 import bisect
-from .help import check_valid
+# from main.ga_classes.instance import Instance
+# from main.ga_classes.schedule import Schedule
+# from main.ga_utils.utils import calculate_makespan, get_instance_info
+
 
 """
     The purpose of this class is to provide utility functions for encoding 
@@ -29,13 +31,6 @@ from .help import check_valid
     v1 contains machines, v2 contains jobs.
 """
 
-"""
-    Calculates the makespan of the schedule
-"""
-def calculate_makespan(schedule):
-    comp_times = schedule["Completion"]
-    return comp_times.max()
-
 
 """
     Generates a random schedule encoding
@@ -50,7 +45,7 @@ def generate_random_schedule_encoding(instance):
     index = 0
     for job in instance.operations:
         for i in range(len(instance.operations[job])):
-            r = np.random.choice(instance.machineAlternatives[job, i])
+            r = np.random.choice(instance.machine_alternatives[job, i])
             v[index, 0] = r
             v[index, 1] = job
             index += 1
@@ -69,6 +64,8 @@ def generate_random_schedule_encoding(instance):
     v2 = v[:, 1]
 
     return v1, v2
+
+# def generate_random_schedule_encoding_lower_processing_time(instance):
 
 
 """
@@ -123,7 +120,7 @@ def decode_schedule(instance, v1, v2, v3):
 
             op_index[j] += 1
 
-            duration = instance.processingTimes[j, o, m]
+            duration = instance.processing_times[j, o, m]
 
             co_time = 0
 
@@ -131,7 +128,7 @@ def decode_schedule(instance, v1, v2, v3):
 
             # Check if there is any change-over time
             if prev_enzyme[m] is not None:
-                co_time = instance.changeOvers[(m, prev_enzyme[m], curr_enzyme)]
+                co_time = instance.change_overs[(m, prev_enzyme[m], curr_enzyme)]
 
             curr_machine_times[m] += co_time
 
@@ -145,7 +142,7 @@ def decode_schedule(instance, v1, v2, v3):
             curr_machine_times[m] = max(curr_machine_times[m], end)
 
             res = {"Machine": m, "Job": j, "Product": instance.orders[j]["product"], "Operation": o, "Start": start,
-                 "Duration": instance.processingTimes[j, o, m], "Completion": end}
+                 "Duration": instance.processing_times[j, o, m], "Completion": end}
 
             results.append(res)
             bisect.insort(machine_tasks[m], (start, end, curr_enzyme))
@@ -197,14 +194,14 @@ def decode_schedule_active(instance, v1, v2, v3):
             m = v1[init_indices[j] + op_index[j]]
             op_index[j] += 1
 
-            duration = instance.processingTimes[j, o, m]
+            duration = instance.processing_times[j, o, m]
 
             co_time = 0
 
             curr_enzyme = instance.orders[j]['product']
 
             if prev_enzyme[m] is not None:
-                co_time = instance.changeOvers[(m, prev_enzyme[m], curr_enzyme)]
+                co_time = instance.change_overs[(m, prev_enzyme[m], curr_enzyme)]
 
             # Here we see if there is a gap between two operations in the machine
             # where we can schedule the current operation
@@ -219,9 +216,9 @@ def decode_schedule_active(instance, v1, v2, v3):
                     first_change_over_time = 0
                     enzyme_of_previous_operation = machine_tasks[m][k - 1][2]
                     if enzyme_of_previous_operation is not None:
-                        first_change_over_time = instance.changeOvers[(m, enzyme_of_previous_operation, curr_enzyme)]
+                        first_change_over_time = instance.change_overs[(m, enzyme_of_previous_operation, curr_enzyme)]
 
-                    second_change_over_time = instance.changeOvers[(m, curr_enzyme, machine_tasks[m][k][2])]
+                    second_change_over_time = instance.change_overs[(m, curr_enzyme, machine_tasks[m][k][2])]
 
                     interval_start = machine_tasks[m][k - 1][1]
                     interval_end = machine_tasks[m][k][0]
@@ -251,7 +248,7 @@ def decode_schedule_active(instance, v1, v2, v3):
             curr_machine_times[m] = max(curr_machine_times[m], end)
 
             res = {"Machine": m, "Job": j, "Product": instance.orders[j]["product"], "Operation": o, "Start": start,
-                   "Duration": instance.processingTimes[j, o, m], "Completion": end}
+                   "Duration": instance.processing_times[j, o, m], "Completion": end}
             results.append(res)
             # print(res)
             bisect.insort(machine_tasks[m], (start, end, curr_enzyme))
@@ -276,58 +273,5 @@ def generate_random_schedule(instance, v3):
     return schedule, v1, v2
 
 
-def generate_starting_schedules(instance_num, size):
-    instance = get_instance_info(instance_num)
-    v3 = []
-    for job in instance.operations:
-        for i in range(len(instance.operations[job])):
-            v3.append(i)
-    v3 = np.array(v3, dtype=np.uint64)
-    sum = 0
-    min_ms = 1234567890
-    min_sched = None
-    min_vecs = None
-    schedules = []
-    for i in range(size):
-        s, v1, v2 = generate_random_schedule(instance, v3)
-        schedules.append(s)
-        ms = calculate_makespan(s)
-        sum += ms
-        if ms < min_ms:
-            min_ms = ms
-            min_sched = s
-            min_vecs = (v1, v2, v3)
-
-    print('avg makespan of', instance_num, 'is', sum/size)
-    print('min makespn', min_ms)
-    # print('min schedule', min_sched)
-    # print('min vecs', min_vecs)
-    # min_sched.to_csv('min_csv_output.csv', index=False)
-    return schedules
-
-"""
-    Generates a starting population with `size` participants
-    A population is a list of tuples (makespan, schedule, v1, v2)
-"""
-def generate_starting_population(instance_num, size):
-    instance = get_instance_info(instance_num)
-    v3 = []
-    for job in instance.operations:
-        for i in range(len(instance.operations[job])):
-            v3.append(i)
-    v3 = np.array(v3, dtype=np.uint64)
-
-    population = []
-
-    for i in range(size):
-        v1, v2 = generate_random_schedule_encoding(instance)
-        schedule, v1, v2 = decode_schedule_active(instance, v1, v2, v3)
-        population.append((calculate_makespan(schedule), -i, schedule, v1, v2))
-    population = sorted(population, key=lambda sched: sched[0])
-    return population
-
-
 if __name__ == "__main__":
-    s = datetime.now()
-    generate_starting_schedules(1, 1000)
-    print('time elapsed', datetime.now() - s)
+    pass

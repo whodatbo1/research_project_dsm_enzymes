@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import time
-from main_ga import pipeline, fitness_function
+from main.main_ga import pipeline, fitness_function
 
 
 def obtain_convergence_plot_data(instance_num: int):
@@ -27,5 +27,5 @@ def obtain_data_from_multiple_runs(instance_num: int, population_size: int, gene
 
 
 # obtain_convergence_plot_data(1)
-obtain_data_from_multiple_runs(1, 100, 100, 5)
+obtain_data_from_multiple_runs(1, 50, 50, 20)
 
