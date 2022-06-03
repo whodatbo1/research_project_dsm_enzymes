@@ -3,7 +3,9 @@ import importlib
 import random
 import numpy as np
 import pandas as pd
+import sys
 
+from classes import milp_utils
 from classes.milp import FlexibleJobShop
 
 
@@ -14,8 +16,7 @@ def create_graph(alg, v1, v2, v3):
     # create a dict with key as vertex id and the value as weight
     for j in range(len(v3)):
         vertices.update({
-            j: 0,
-        })
+            j: 0})
     # Create way te represent edges of the graph, take into account the precedence arcs, machine arcs and dummy arcs.
     dummy_edges = {}
     pre_edges = {}
@@ -30,8 +31,11 @@ def create_graph(alg, v1, v2, v3):
         # To create the dummy edges
         if v3[i] == 0:
             dummies.update({i: 0})
-            if i - 1 > 0:
-                dummy_edges.update({i - 1: {-1: 0}})
+        if i + 1 > len(v3)-1:
+            dummy_edges.update({i: {-1: 0}})
+        elif v3[i + 1] == 0:
+            dummy_edges.update({i: {-1: 0}})
+
         # statement for the precedence job edges
         if i + 1 < len(v3) and v3[i + 1] != 0:
             edges = {i + 1: 0}
@@ -42,9 +46,6 @@ def create_graph(alg, v1, v2, v3):
 
 
 def create_machine_edges(alg, v1, v3, g):
-    machine_edges = {}
-    for v in g.vertices.keys():
-        machine_edges.update({v: {}})
     machines = {}
     for m in alg.machines:
         machines.update({m: []})
@@ -54,6 +55,86 @@ def create_machine_edges(alg, v1, v3, g):
         operations.append(i)
         machines.update({v1[i]: operations})
     prev_job = -1
+    machine_edges = get_machine_edges(alg, g, v3, machines)
+
+    return Graph(g.vertices, machines, g.dummy_edges, g.pre_edges, machine_edges)
+
+
+def k_insertion(alg, g, v3, v, pos, path):
+    m_e = g.machine_edges.copy()
+    m_e.update({v: {}})
+
+    # Assign new machine, determine order and set weight
+    machines = {}
+    for m in alg.machines:
+        machines.update({m: g.machines[m].copy()})
+    # for i in range(len(v1)):
+    #     operations = machines.get(v1[i])
+    #     operations.append(i)
+    #     machines.update({v1[i]: operations})
+    for k in machines.keys():
+        k_list = m_e.get(k)
+        k_keys = k_list.keys()
+        if v in k_keys:
+            m_e.get(k).pop(v)
+            break
+    for k in machines:
+        if v in machines[k]:
+            machines[k].remove(v)
+    g_min = Graph(g.vertices.copy(), machines, g.dummy_edges.copy(), g.pre_edges.copy(), m_e.copy())
+    j = get_job_op(v3, v)
+    o = v3[v]
+    m_a = alg.machineAlternatives[j, o].copy()
+    # Figure out how to determine m
+    m = m_a[pos]
+    qk = machines.get(m).copy()
+    rk = set()
+    lk = set()
+    df = get_data_frame(g, alg, v3)
+    cm = milp_utils.calculate_makespan(df)
+    #s_v = get_start_time(g_min, v)
+    s_v = 0
+    edges = get_outgoing_edges(g)
+    for i in range(len(path)):
+        if path[i] == v:
+            continue
+        s_v += g.vertices.get(path[i])
+    t_v = cm
+    #t_v = get_completion_time(g_min, cm, v)
+    for x in qk:
+        j_x = get_job_op(v3, x)
+        # s_x = get_start_time(g, x)
+        s_x = 0
+        t_x = cm
+        p_x = alg.processingTimes[j_x, v3[x], m]
+        if s_x + p_x > s_v:
+            rk.add(x)
+        if p_x + t_x > t_v:
+            lk.add(x)
+    rk_lk = set(lk) & set(rk)
+    upper_bound = 0
+    if len(rk_lk) > 0:
+        index = len(lk - rk) + random.randrange(len(rk_lk))
+        qk.insert(index, v)
+    elif len(rk_lk) == 0:
+        q_k = set(qk.copy())
+        q_k = q_k - (lk | rk)
+        if len(q_k) > 0:
+            index = len(lk - rk) + random.randrange(len(q_k))
+            qk.insert(index, v)
+
+        else:
+            qk.insert(len(lk) - 1, v)
+    machines.update({m: qk})
+    m_e = get_machine_edges(alg, g, v3, machines)
+    g_end = Graph(g_min.vertices.copy(), machines, g_min.dummy_edges.copy(), g_min.pre_edges.copy(), m_e.copy())
+    return g_end
+
+
+def get_machine_edges(alg, g, v3,  machines):
+    machine_edges = {}
+    for v in g.vertices.keys():
+        machine_edges.update({v: {}})
     for m in range(len(machines)):
         ops = machines.get(m)
 
@@ -65,112 +146,35 @@ def create_machine_edges(alg, v1, v3, g):
                 j_o_n = get_job_op(v3, ops[i + 1])
                 co = alg.changeOvers[m, alg.orders[j_o].get("product"), alg.orders[j_o_n].get("product")]
                 machine_edges.update({ops[i]: {ops[i + 1]: co}})
-    return Graph(g.vertices, machines, g.dummy_edges, g.pre_edges, machine_edges)
+    return machine_edges
 
 
-def k_insertion(alg, g, v3, v, pos):
-    m_e = g.machine_edges.copy()
-    m_e.update({v: {}})
-
-    # Assign new machine, determine order and set weight
-    machines = g.machines.copy()
-    for k in machines.keys():
-        k_list = m_e.get(k)
-        k_keys = k_list.keys()
-        if v in k_keys:
-            m_e.get(k).pop(v)
-            break
-    for k in machines:
-        if v in machines[k]:
-            machines[k].remove(v)
-    g_min = Graph(g.vertices.copy(), machines.copy(), g.dummy_edges.copy(), g.pre_edges.copy(), m_e.copy())
-    j = get_job_op(v3, v)
-    o = v3[v]
-    m_a = alg.machineAlternatives[j, o].copy()
-    # Figure out how to determine m
-    m = m_a[pos]
-    qk = machines.get(m).copy()
-    rk = []
-    lk = []
-    for x in qk:
-        cm = get_critical_path(g)
-        s_v = get_e_start_time(g_min, v)
-        t_v = get_l_completion_time(g_min, cm[0], v)
-        j_x = get_job_op(v3, x)
-        s_x = get_e_start_time(g_min, x)
-        t_x = get_l_completion_time(g_min, cm[0], x)
-        p_x = alg.processingTimes[j_x, v3[x], m]
-        if s_x + p_x > s_v:
-            rk.append(x)
-        if p_x + t_x > t_v:
-            lk.append(x)
-    rk_lk = []
-    for x in qk:
-        if x in lk and x in rk:
-            rk_lk.append(x)
-    if len(rk_lk) > 0:
-        index = random.randrange(0, len(rk_lk)+1)
-        qk.insert(index, v)
-    elif len(rk_lk) == 0:
-        q_k = qk.copy()
-        for x in qk:
-            if x in lk or x in rk:
-                q_k.remove(x)
-        if len(q_k) > 0:
-            index = random.randrange(0, len(q_k) + 1)
-            qk.insert(index, v)
+def get_start_time(g, v):
+    edges = get_incoming_edges(g)
+    v_po_l = list(edges.get(v).keys())
+    max_m = 0
+    for i in v_po_l:
+        if i == -2:
+            return max_m
         else:
-            qk.insert(len(lk)-1, v)
-    machines.update({m: qk})
-    for i in range(len(qk)):
-        j = get_job_op(v3, qk[i])
-        if i + 1 < len(qk):
-            j_o_n = get_job_op(v3, qk[i + 1])
-            co = alg.changeOvers[m, alg.orders[j].get("product"), alg.orders[j_o_n].get("product")]
-            m_e.update({qk[i]: {qk[i + 1]: co}})
-    g = Graph(g.vertices.copy(), machines.copy(), g.dummy_edges.copy(), g.pre_edges.copy(), m_e.copy())
-    return g
+            s_j = get_start_time(g, i) + g.vertices.get(i) + edges.get(v).get(i)
+            if s_j > max_m:
+                max_m = s_j
+    return max_m
 
 
-def get_e_start_time(g, v):
-    m_p = -1
-    j_p = -1
-    for x in g.vertices.keys():
-        if v in g.machine_edges.get(x).keys():
-            m_p = x
-        if v in g.pre_edges.get(x).keys():
-            j_p = x
-    if m_p == -1 and j_p == -1:
-        return 0
-    else:
-        s_m = 0
-        if m_p > -1:
-            s_m = g.vertices.get(m_p) + g.machine_edges.get(m_p).get(v) + get_e_start_time(g, m_p)
-        s_j = 0
-        if j_p > -1:
-            s_j = g.vertices.get(j_p) + g.pre_edges.get(j_p).get(v) + get_e_start_time(g, j_p)
-        return max(s_m, s_j)
-
-
-def get_l_completion_time(g, cm, v):
-    m_s = -1
-    if len(g.machine_edges.get(v).keys()) != 0:
-        m_s = list(g.machine_edges.get(v).keys())[0]
-    j_s = -1
-    if len(g.pre_edges.get(v).keys()) != 0:
-        j_s = list(g.pre_edges.get(v).keys())[0]
-    if j_s == -1 and m_s == -1:
-        return cm
-    else:
-        s_m = 10000
-        if m_s > -1:
-            keys = list(g.machine_edges.get(v).keys())
-            s_m = get_l_completion_time(g, cm, m_s) - g.vertices.get(m_s) - g.machine_edges.get(v).get(keys[0])
-        s_j = 10000
-        if j_s > -1:
-            keys = list(g.pre_edges.get(v).keys())
-            s_j = get_l_completion_time(g, cm, j_s) - g.vertices.get(j_s) - g.pre_edges.get(v).get(keys[0])
-        return min(s_m, s_j)
+def get_completion_time(g, cm, v):
+    edges = get_outgoing_edges(g)
+    v_so_l = list(edges.get(v).keys())
+    min_m = cm
+    for i in v_so_l:
+        if i == -1:
+            return min_m
+        else:
+            s_j = get_completion_time(g, cm, i) - g.vertices.get(i) - edges.get(v).get(i)
+            if s_j < min_m:
+                min_m = s_j
+    return min_m
 
 
 def get_job_op(v3, v):
@@ -184,12 +188,7 @@ def get_job_op(v3, v):
 
 
 def get_critical_path(g):
-    edges = {}
-    for k in g.vertices.keys():
-        e = g.dummy_edges.get(k)
-        e.update(g.pre_edges.get(k))
-        e.update(g.machine_edges.get(k))
-        edges.update({k: e})
+    edges = get_outgoing_edges(g)
     visited = {}
     for i in g.vertices.keys():
         visited.update({i: False})
@@ -222,46 +221,51 @@ def get_path(g, edges, c, t, visited, path, paths, m, max_m):
     visited.update({c: False})
 
 
-def get_data_frame(self, inst):
-    incomingEdges = get_incoming_edges(self)
+def get_data_frame(self, inst, v3):
+    incomingEdges = get_incoming_edges_list(self)
 
-    visited = [True]  # keeps track if a node has been visited or not
-    for i in range(len(self.vertices) - 1):
-        visited.append(False)
-    timeArray = np.zeros(len(inst.machines))  # last use time of each machine
-    lastEnzyme = np.zeros(len(inst.machines))  # last enzyme used on each machine
-    previousOpCompletion = np.zeros(len(inst.jobs))  # completion time of last operation on each job
+    visited = {}  # keeps track if a node has been visited or not
+    for i in self.vertices.keys():
+        visited.update({i: False})
+    visited.update({-2: True})
+    timeArray = []
+    lastEnzyme = []
+    previousOpCompletion = []
+    for i in range(len(inst.machines)):
+        timeArray.append(0)  # last use time of each machine filled with 0
+        lastEnzyme.append("")  # last enzyme used on each machine # empty string
+    for i in range(len(inst.jobs)):
+        previousOpCompletion.append(0)  # completion time of last operation on each job #Fileld with 0
 
     opsPerJobAcc = [0]  # list to easily find which job an operation node belongs to
     for j in range(len(inst.jobs)):
-        opsInJob = inst.operations[inst.jobs[j]]
-
+        opsInJob = len(inst.operations[inst.jobs[j]])
         opsPerJobAcc.append(opsPerJobAcc[j] + opsInJob)
 
     results = []
-
+    l = -1
     queue = []  # a queue to keep track of the next node to visit
-    for t in self.zeroEdges[0]:
-        queue.append(t[0])
+    for t in self.dummy_edges.get(-2).keys():
+        queue.append(t)
 
     while len(queue) != 0:
         n = queue.pop(0)
+
+        if n == l or visited[n]:
+            continue
 
         skipping = False
         for i in (incomingEdges[n]):
             if not visited[i]:
                 skipping = True
+                break
         if skipping:
             continue
 
         # find out which job the node belongs to
-        j = 0
-        while n > opsPerJobAcc[j]:
-            j += 1
-        j -= 1
-
+        j = get_job_op(v3, n)
         # find the correct operation in that job
-        o = n - 1 - opsPerJobAcc[j]
+        o = v3[n]
 
         # find the product of that job
         p = inst.orders[j]["product"]
@@ -278,8 +282,8 @@ def get_data_frame(self, inst):
 
         # find the starting time of the operation
         changeOver = 0
-        if lastEnzyme[m] != 0:
-            changeOver = self.inst.changeOvers[(m, lastEnzyme[m], p)]
+        if lastEnzyme[m] != "":
+            changeOver = inst.changeOvers[(m, lastEnzyme[m], p)]
         s = max(previousOpCompletion[j], timeArray[m] + changeOver)
 
         # store the schedule entry in results
@@ -292,10 +296,12 @@ def get_data_frame(self, inst):
         previousOpCompletion[j] = s + d
         visited[n] = True
         # add all connected nodes to the queue
-        for t in (self.zeroEdges[n]):
-            queue.append(t[0])
-        for t in (self.chosenEdges[n]):
-            queue.append(t[0])
+        for t in self.dummy_edges.get(n).keys():
+            queue.append(t)
+        for t in self.pre_edges.get(n).keys():
+            queue.append(t)
+        for t in self.machine_edges.get(n).keys():
+            queue.append(t)
 
     dfSchedule = pd.DataFrame(results)
     dfSchedule.sort_values(by=['Start', 'Machine', 'Job'], inplace=True)
@@ -304,7 +310,7 @@ def get_data_frame(self, inst):
 
 
 # returns a dictionary storing all incoming edges in the final schedule graph
-def get_incoming_edges(self):
+def get_incoming_edges_list(self):
     # initialize the dictionary
     incomingEdges = {}
     for n in self.vertices.keys():
@@ -312,15 +318,37 @@ def get_incoming_edges(self):
 
     # for each node, check the outgoing edges and add them to the respective entry in the dictionary
     for n in self.vertices.keys():
-        n_d_e = self.dummy_edges[n]
-        n_p_e = self.pre_edges[n]
-        n_m_e = self.machine_edges[n]
+        n_d_e = self.dummy_edges.get(n)
+        n_p_e = self.pre_edges.get(n)
+        n_m_e = self.machine_edges.get(n)
         outgoingEdges = n_d_e | n_p_e | n_m_e
         for m in outgoingEdges:
-            print(m)
-            print(incomingEdges[m])
             incomingEdges[m].append(n)
     return incomingEdges
+
+
+def get_incoming_edges(g):
+    incoming_edges = {}
+    for n in g.vertices.keys():
+        incoming_edges.update({n: {}})
+    for n in g.vertices.keys():
+        n_d_e = g.dummy_edges[n]
+        n_p_e = g.pre_edges[n]
+        n_m_e = g.machine_edges[n]
+        outgoing_edges = n_d_e | n_p_e | n_m_e
+        for m in outgoing_edges.keys():
+            incoming_edges.get(m).update({n: outgoing_edges.get(m)})
+    return incoming_edges
+
+
+def get_outgoing_edges(g):
+    edges = {}
+    for k in g.vertices.keys():
+        e = g.dummy_edges.get(k).copy()
+        e.update(g.pre_edges.get(k).copy())
+        e.update(g.machine_edges.get(k).copy())
+        edges.update({k: e})
+    return edges
 
 
 class Graph:
