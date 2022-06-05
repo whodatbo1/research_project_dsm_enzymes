@@ -81,5 +81,6 @@ def draw_box_plot_multirun(filename: str):
 # draw_convergence_plot('./ga_results/results_2022_05_31_19-22-07.csv')
 # draw_multi_run_plot('./ga_results/multirun_results_2022_06_01_10-17-58.csv')
 # draw_box_plot_multirun('./ga_results/multirun_results_2022_06_01_13-56-48.csv')
-draw_box_plot_multirun('./ga_results/multirun_results_2022_06_03_17-18-50.csv')
-draw_multi_run_plot('./ga_results/multirun_results_2022_06_03_17-18-50.csv')
+draw_box_plot_multirun('./ga_results/multirun_results_2022_06_04_15-33-14.csv')
+draw_box_plot_multirun('./ga_results/multirun_results_2022_06_03_17-31-29.csv')
+draw_multi_run_plot('./ga_results/multirun_results_2022_06_04_15-33-14.csv')

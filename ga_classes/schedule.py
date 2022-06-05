@@ -18,9 +18,10 @@ class Schedule:
 
     def construct_from_df(self, df: pd.DataFrame):
         v1, v2 = encode_schedule(df)
-        self.v1 = v1
-        self.v2 = v2
-        self.schedule_df = df
+        schedule, v1_active, v2_active = decode_schedule_active(self.instance, v1, v2, self.instance.v3)
+        self.v1 = v1_active
+        self.v2 = v2_active
+        self.schedule_df = schedule
         self.calculate_all_fitness_values()
         return self
 
@@ -33,15 +34,18 @@ class Schedule:
         return self
 
     def calculate_all_fitness_values(self):
-        self.makespan = calculate_makespan(self.schedule_df)
-        self.total_machine_workload = calculate_total_machine_workload(self.schedule_df)
-        self.max_machine_workload = calculate_max_machine_workload(self.schedule_df)
-        self.latency = calculate_latency(self.schedule_df)
+        self.makespan = calculate_makespan(self)
+        self.total_machine_workload = calculate_total_machine_workload(self)
+        self.max_machine_workload = calculate_max_machine_workload(self)
+        self.latency = calculate_latency(self)
 
     # Returns all fitness values of schedule
     def get_fitness(self):
         return [self.makespan, self.total_machine_workload, self.max_machine_workload, self.latency]
 
+    def __lt__(self, other):
+        if not isinstance(other, Schedule):
+            return NotImplemented
 
 # Calculates the makespan of the schedule
 def calculate_makespan(schedule: Schedule):
@@ -72,13 +76,14 @@ def calculate_total_machine_workload(schedule: Schedule) -> int:
 # Calculates the maximum total processing time across all machines
 def calculate_max_machine_workload(schedule: Schedule) -> int:
     max_machine_processing_time = schedule.schedule_df.groupby(by="Machine")["Duration"].sum().max()
-    print('max', max_machine_processing_time)
-    print(schedule.schedule_df.groupby(by="Machine")["Duration"].sum().sum())
     return max_machine_processing_time
 
 
-# Compares 2 schedules
+# Compares 2 schedules to see if one dominates the other
+# In all of the fitness values implemented now, lower is better
 # If all of the fitness values of the first schedule are better - return 1
+# If all of the fitness values of the second schedule are better - return -1
+# Else - return 0
 def compare_schedule(self, schedule_0: Schedule, schedule_1: Schedule) -> int:
     if schedule_0.makespan < schedule_1.makespan and \
             schedule_0.total_machine_workload < schedule_1.total_machine_workload and \

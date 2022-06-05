@@ -25,5 +25,5 @@ def obtain_data_from_multiple_runs(instance_num: int, population_size: int, gene
 
 
 # obtain_convergence_plot_data(1)
-obtain_data_from_multiple_runs(1, 100, 100, 5)
+obtain_data_from_multiple_runs(12, 100, 100, 5)
 

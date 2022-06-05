@@ -1,14 +1,15 @@
 import importlib.util
 import pandas as pd
 import os
+from main.ga_classes.instance import Instance
 
 
-def get_instance_info(i):
-    fileName = 'FJSP_' + str(i)
+def get_instance_info(instance_num: int) -> Instance:
+    fileName = 'FJSP_' + str(instance_num)
     spec = importlib.util.spec_from_file_location('instance', os.getcwd() + "/instances/" + fileName + '.py')
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    return mod
+    return Instance(mod)
 
 
 def calculate_problem_size(instance):

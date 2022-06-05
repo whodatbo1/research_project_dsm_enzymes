@@ -1,4 +1,3 @@
-from main.ga_utils.encode_decode import *
 import pickle
 from datetime import datetime
 import bisect
@@ -6,16 +5,30 @@ from heapq import merge
 from main.ga_classes.instance import Instance
 from main.ga_classes.schedule import Schedule, calculate_latency, calculate_makespan, calculate_total_machine_workload, calculate_max_machine_workload
 from main.ga_utils.utils import get_instance_info
+from main.ga_utils.encode_decode import *
 
 
 # Generates a starting population with `size` participants
 # A population is a list of tuples (makespan, tie_breaker, Schedule)
-def generate_starting_population(instance, size):
+def generate_starting_population_zhang(instance, size) -> [(int, int, Schedule)]:
     population = []
 
     for i in range(size):
         schedule = Schedule(instance)
         v1, v2 = instance.generate_random_schedule_encoding_zhang()
+        schedule.construct_from_vectors(v1, v2)
+        population.append((schedule.makespan, -i, schedule))
+
+    population = sorted(population, key=lambda sched: (sched[0], sched[1]))
+    return population
+
+
+def generate_starting_population_random(instance, size) -> [(int, int, Schedule)]:
+    population = []
+
+    for i in range(size):
+        schedule = Schedule(instance)
+        v1, v2 = instance.generate_random_schedule_encoding()
         schedule.construct_from_vectors(v1, v2)
         population.append((schedule.makespan, -i, schedule))
 
@@ -108,7 +121,7 @@ def crossover(instance, schedule_male, schedule_female, job_vector):
 def pipeline(instance_num, size, generations, fitness):
     start_time = datetime.now()
 
-    instance = Instance(get_instance_info(instance_num))
+    instance = get_instance_info(instance_num)
 
     job_vector = instance.job_vector
     parent_count = int(size / 2)
@@ -118,7 +131,7 @@ def pipeline(instance_num, size, generations, fitness):
     print('Starting pipeline with instance', str(instance_num) + ', population size', str(size) + ' and max generation count', str(generations) + '...')
     print('Generating starting population...')
 
-    population = generate_starting_population(instance, size)
+    population = generate_starting_population_zhang(instance, size)
 
     tie_breaker = -size - 1
 
