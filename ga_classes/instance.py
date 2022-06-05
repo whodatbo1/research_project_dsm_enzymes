@@ -37,6 +37,8 @@ class Instance:
         self.change_overs = instance.changeOvers
         self.instance = instance
         self.vector_length = sum([len(k) for k in self.operations.values()])
+        self.init_indices = np.where(self.v3 == 0)[0]
+        # print('init', self.init_indices)
 
     def generate_random_schedule_encoding(self):
         v_length = self.vector_length
@@ -66,17 +68,17 @@ class Instance:
         return v1, v2
 
     def generate_random_schedule_encoding_zhang(self):
-        v2 = np.random.shuffle(self.job_vector.copy())
+        v2 = self.job_vector.copy()
+        np.random.shuffle(v2)
         op_counts = {j: 0 for j in self.jobs}
+        # curr_indices = {j: 0 for j in self.jobs}
         v1 = np.zeros_like(v2)
-        index = 0
         for j in v2:
             curr_op = op_counts[j]
-            op_counts[j] += 1
 
             take_lower_time = np.random.rand()
             m1, m2 = np.random.choice(self.machine_alternatives[j, curr_op], 2)
-
+            # print(j, curr_op, m1, m2)
             if self.processing_times[(j, curr_op, m1)] >= self.processing_times[(j, curr_op, m2)]:
                 max_m = m1
                 min_m = m2
@@ -85,11 +87,11 @@ class Instance:
                 min_m = m1
 
             if take_lower_time < 0.8:
-                v1[index] = min_m
+                v1[self.init_indices[j] + op_counts[j]] = min_m
             else:
-                v1[index] = max_m
+                v1[self.init_indices[j] + op_counts[j]] = max_m
 
-            index += 1
-
+            op_counts[j] += 1
+        # print(v1, v2)
         return v1, v2
 

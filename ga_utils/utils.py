@@ -1,12 +1,6 @@
 import importlib.util
 import pandas as pd
 import os
-import numpy as np
-
-
-# Calculates the makespan of the schedule
-def calculate_makespan(schedule):
-    return schedule["Completion"].max()
 
 
 def get_instance_info(i):
@@ -124,3 +118,6 @@ def feasibleSchedule(inst, df: pd.DataFrame):
         if infeasible:
             return False
     return True
+
+
+# calculate_latency()

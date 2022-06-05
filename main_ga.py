@@ -1,26 +1,21 @@
-import numpy as np
-import importlib.util
 from main.ga_utils.encode_decode import *
 import pickle
 from datetime import datetime
 import bisect
 from heapq import merge
 from main.ga_classes.instance import Instance
-from main.ga_classes.schedule import Schedule
-from main.ga_utils.utils import get_instance_info, calculate_makespan
+from main.ga_classes.schedule import Schedule, calculate_latency, calculate_makespan, calculate_total_machine_workload, calculate_max_machine_workload
+from main.ga_utils.utils import get_instance_info
 
 
-"""
-    Generates a starting population with `size` participants
-    A population is a list of tuples (makespan, tie_breaker, Schedule)
-"""
-def generate_starting_population(instance_num, size):
-    instance = Instance(get_instance_info(instance_num))
+# Generates a starting population with `size` participants
+# A population is a list of tuples (makespan, tie_breaker, Schedule)
+def generate_starting_population(instance, size):
     population = []
 
     for i in range(size):
         schedule = Schedule(instance)
-        v1, v2 = instance.generate_random_schedule_encoding()
+        v1, v2 = instance.generate_random_schedule_encoding_zhang()
         schedule.construct_from_vectors(v1, v2)
         population.append((schedule.makespan, -i, schedule))
 
@@ -28,7 +23,7 @@ def generate_starting_population(instance_num, size):
     return population
 
 
-def fitness_function(schedule):
+def fitness_function(schedule: Schedule):
     return calculate_makespan(schedule)
 
 
@@ -114,9 +109,7 @@ def pipeline(instance_num, size, generations, fitness):
     start_time = datetime.now()
 
     instance = Instance(get_instance_info(instance_num))
-    # instance_class = Instance(instance)
 
-    v3 = instance.v3
     job_vector = instance.job_vector
     parent_count = int(size / 2)
     if parent_count % 2 == 1:
@@ -125,7 +118,7 @@ def pipeline(instance_num, size, generations, fitness):
     print('Starting pipeline with instance', str(instance_num) + ', population size', str(size) + ' and max generation count', str(generations) + '...')
     print('Generating starting population...')
 
-    population = generate_starting_population(instance_num, size)
+    population = generate_starting_population(instance, size)
 
     tie_breaker = -size - 1
 
@@ -163,8 +156,10 @@ def pipeline(instance_num, size, generations, fitness):
             v1_child, v2_child, i1, i2 = crossover(instance, p1_vectors, p2_vectors, job_vector)
 
             schedule = Schedule(instance).construct_from_vectors(v1_child, v2_child)
-
-            bisect.insort(children, (fitness(schedule.schedule_df), tie_breaker, schedule))
+            calculate_latency(schedule)
+            calculate_total_machine_workload(schedule)
+            calculate_max_machine_workload(schedule)
+            bisect.insort(children, (fitness(schedule), tie_breaker, schedule))
 
             tie_breaker -= 1
 
@@ -172,12 +167,10 @@ def pipeline(instance_num, size, generations, fitness):
         for i in range(len(non_elites)):
             _, _, schedule = non_elites[i]
             mutate_schedule(instance, schedule, 0.2)
-            # non_elites[i] = (fitness_value, tie_breaker_mutation, schedule, v1, v2)
 
         for i in range(len(children)):
             _, _, schedule = children[i]
             mutate_schedule(instance, schedule, 0.2)
-            # children[i] = (fitness_value, tie_breaker_mutation, schedule, v1, v2)
 
         next_gen_population = list(merge(children, non_elites))[:non_elite_size]
 
