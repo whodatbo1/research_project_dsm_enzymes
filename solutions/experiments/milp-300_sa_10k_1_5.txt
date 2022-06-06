@@ -1,2 +1,0 @@
-MILP solver, limited to 300 seconds
-[]

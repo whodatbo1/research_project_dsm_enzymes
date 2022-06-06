@@ -94,17 +94,14 @@ def k_insertion(alg, g, v3, v, pos, path):
     cm = milp_utils.calculate_makespan(df)
     #s_v = get_start_time(g_min, v)
     s_v = 0
-    edges = get_outgoing_edges(g)
-    for i in range(len(path)):
-        if path[i] == v:
-            continue
-        s_v += g.vertices.get(path[i])
     t_v = cm
     #t_v = get_completion_time(g_min, cm, v)
     for x in qk:
         j_x = get_job_op(v3, x)
         # s_x = get_start_time(g, x)
+        # s_x = get_critical_path(g, -2, x)
         s_x = 0
+        # t_x = get_critical_path(g, x, -1)
         t_x = cm
         p_x = alg.processingTimes[j_x, v3[x], m]
         if s_x + p_x > s_v:
@@ -187,7 +184,7 @@ def get_job_op(v3, v):
     return j
 
 
-def get_critical_path(g):
+def get_critical_path(g, c, t):
     edges = get_outgoing_edges(g)
     visited = {}
     for i in g.vertices.keys():
@@ -195,7 +192,7 @@ def get_critical_path(g):
     path = []
     mkspns = []
     paths = []
-    get_path(g, edges, -2, -1, visited, path, paths, 0, mkspns)
+    get_path(g, edges, c, t, visited, path, paths, 0, mkspns)
     max_m = max(mkspns)
     index = mkspns.index(max_m)
     c_p = paths[index]
@@ -205,11 +202,11 @@ def get_critical_path(g):
 def get_path(g, edges, c, t, visited, path, paths, m, max_m):
     visited.update({c: True})
     path.append(c)
-    m += g.vertices.get(c)
     if c == t:
         max_m.append(m)
         paths.append(path.copy())
     else:
+        m += g.vertices.get(c)
         for i in edges.get(c):
             test = edges.get(c)
             if not visited.get(i):

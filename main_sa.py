@@ -1,6 +1,8 @@
 import bisect
 import importlib.util
 
+from matplotlib import pyplot as plt
+
 from classes import milp_utils
 from classes.milp import FlexibleJobShop
 import pandas as pd
@@ -115,17 +117,16 @@ def feasible_schedule(inst, df):
     return True
 
 
-def compare_graphs(old, new):
-    return get_critical_path(old)[0] - get_critical_path(new)[0]
-    # old_ms = milp_utils.calculate_makespan(get_data_frame(old, inst))
-    # new_ms = milp_utils.calculate_makespan(get_data_frame(new, inst))
-    # return old_ms - new_ms
+def compare_graphs(inst, v3, old, new):
+    old_ms = milp_utils.calculate_makespan(get_data_frame(old, inst, v3))
+    new_ms = milp_utils.calculate_makespan(get_data_frame(new, inst, v3))
+    return old_ms - new_ms
 
 
 def neighbourhood(inst, g, v3):
     n = []
     g_n = g
-    path = get_critical_path(g)[1].copy()
+    path = get_critical_path(g, -2, -1)[1].copy()
     trav_path = path.copy()
     trav_path.remove(-1)
     trav_path.remove(-2)
@@ -136,7 +137,7 @@ def neighbourhood(inst, g, v3):
     return n
 
 
-def run_sa_g(instance_num, temp):
+def run_sa_g(instance_num, temp, path):
     file_name = 'FJSP_' + str(instance_num)
     spec = importlib.util.spec_from_file_location('instance', "instances/" + file_name + '.py')
     mod = importlib.util.module_from_spec(spec)
@@ -154,21 +155,42 @@ def run_sa_g(instance_num, temp):
         print("Infeasible schedule: " + str(df))
         return -100
     temperature = temp
-    deltaT = 0.75
+    deltaT = 0.9
     found_better = 0
+    selected_worse = 0
+    iterations = 0
+    temperatures = []
+    mkspns = []
+    temperatures.append(temperature)
+    min_m = milp_utils.calculate_makespan(df)
+    mkspns.append(min_m)
     while temperature > 1:
         neighbours = neighbourhood(alg, g, s[2])
+        # new_g = g
+        # for n in neighbours:
+        #     m_n = milp_utils.calculate_makespan(get_data_frame(n, alg, s[2]))
+        #     if m_n < min_m:
+        #         min_m = m_n
+        #         new_g = n
         new_g = random.choice(neighbours)
-        delta = compare_graphs(g, new_g)
+        delta = compare_graphs(alg, s[2], g, new_g)
         if delta > 0:
             g = new_g
             found_better += 1
         else:
             r = random.uniform(0, 1)
+            # print("r: " + str(r))
+            # print("exp(d/t): " + str(np.exp(delta / temperature)))
             if r < np.exp(delta / temperature):
+
+                selected_worse += 1
                 g = new_g
         temperature *= deltaT
+        iterations += 1
+        temperatures.append(temperature)
+        mkspns.append(milp_utils.calculate_makespan(get_data_frame(g, alg, s[2])))
 
+    create_t_mksp_plot(instance_num, temperatures, mkspns, path)
     df = get_data_frame(g, alg, s[2])
     if not feasible_schedule(alg, df):
         print("Infeasible schedule: \n" + str(df))
@@ -176,46 +198,17 @@ def run_sa_g(instance_num, temp):
     print(df)
     res = milp_utils.calculate_makespan(df)
     print("found better: " + str(found_better))
+    print("selected worse: " + str(selected_worse))
+    print("iterations: " + str(iterations))
     return res
 
-# print("graph neighbours")
-# file_name = 'FJSP_' + str(0)
-# spec = importlib.util.spec_from_file_location('instance', "instances/" + file_name + '.py')
-# mod = importlib.util.module_from_spec(spec)
-# spec.loader.exec_module(mod)
-# alg = FlexibleJobShop(jobs=mod.jobs, machines=mod.machines, processingTimes=mod.processingTimes,
-#                       machineAlternatives=
-#                       mod.machineAlternatives, operations=mod.operations, instance=file_name,
-#                       changeOvers=mod.changeOvers, orders=mod.orders)
-#
-# s = init_schedule.create_schedule(alg)
-# v3 = s[2]
-# g = create_graph(alg, s[0], s[1], s[2])
-# g = create_machine_edges(alg, s[0], s[2], g)
-# df = get_data_frame(g, alg, v3)
-# better_n = 0
-# for i in range(1):
-#     c_p = get_critical_path(g)
-#     print(g.dummy_edges)
-#     print(g.pre_edges)
-#     print(g.machine_edges)
-#     print(g.machines)
-#     print(c_p)
-#     print("\n")
-#     path = c_p[1]
-#     path.remove(-1)
-#     path.remove(-2)
-#     for v in path:
-#         for x in range(len(alg.machineAlternatives[get_job_op(v3, v), v3[v]])):
-#     # v = random.choice(path)
-#     # x = random.randrange(0, len(alg.machineAlternatives[get_job_op(v3, v), v3[v]]))
-#             g_n = k_insertion(alg, g, s[2], v, x, path)
-#     print(g_n.dummy_edges)
-#     print(g_n.pre_edges)
-#     print(g_n.machine_edges)
-#     print(g_n.machines)
-#     print(str(get_critical_path(g_n)) + "\n")
-#     print(get_data_frame(g_n, alg, v3))
-#     if c_p[0] > get_critical_path(g_n)[0]:
-#         better_n += 1
-# print(better_n)
+
+def create_t_mksp_plot(i, t, m, path):
+    plt.plot(t, m, marker='o',
+             label="Make spans over the itterations for instance: " + str(i))
+    plt.ylabel("makespan")
+    # plt.xticks(np.arange(0, max(t)))
+    plt.xlabel("temperature")
+    plt.legend()
+    plt.savefig(path + "\\" + "makespans_during_instance_" + str(i) + ".png")
+    plt.figure()

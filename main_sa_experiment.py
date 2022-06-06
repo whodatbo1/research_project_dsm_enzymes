@@ -19,7 +19,7 @@ def run_exp_g(temps, n_runs, path, name, nr_instances=13):
         y = np.empty(n_runs)
         paths = []
         for n in range(n_runs):
-            r = main_sa.run_sa_g(i, temps)
+            r = main_sa.run_sa_g(i, temps, path)
             y[n] = r
         # box_plt.append(y)
         # plt.savefig(path + "\\" + name + "_boxplot.png")

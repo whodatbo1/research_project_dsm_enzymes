@@ -13,7 +13,7 @@ from main_milp import milp_solve
 from main_sa_experiment import run_exp_g
 
 
-def run_milp(name, funcs_times_labels, nr_instances=13):
+def run_experiment(name, funcs_times_labels, nr_instances=13):
     path = os.path.join("solutions/experiments")
     file = open(path + "/"
                        "" + name + ".txt", "a")
@@ -23,6 +23,7 @@ def run_milp(name, funcs_times_labels, nr_instances=13):
         y_val = list(map(lambda x: x[1], solution[0]))
         file.write(solution[1] + "\n")
         file.write(str(solution[0]) + "\n")
+        plt.plot(x_val, y_val, marker='o', label=solution[1])
     file.close()
     plt.ylabel("Lowest makespan found")
     plt.xticks(range(0, nr_instances))
@@ -44,14 +45,18 @@ def run_sa_g(name, temps, n_runs, nr_instances=13):
             file.write(str(y_val_sa) + "\n")
             plt.plot(np.arange(0, nr_instances), y_val_sa, marker='o',
                      label="Simulated annealing, t=" + str(t) + " runs=" + str(n))
+    milp_values = [22.0, 33.0, 43.0, 55.0, 71.0, 87.0, 100.0, 109.0, 128.0, 138.0, 156.0, 178.0, 203.0]
+    plt.plot(np.arange(0, nr_instances), milp_values, marker='o',
+             label="MILP solver, limited to 1800 seconds")
     file.close()
     plt.ylabel("Lowest makespan found")
     plt.xticks(range(0, nr_instances))
     plt.xlabel("Instances")
     plt.legend()
     plt.savefig(path + "\\" + name + ".png")
+    plt.figure()
 
 
-# run_sa_g("sa_g_graph", [10, 100, 1000, 10000], [10])  # file-name, T, n_runs, neighbours
-# run_milp("milp-1800", [(milp_solve, [1800], "MILP solver, limited to 1800 seconds")])
-run_milp("milp-10", [(milp_solve, [10], "MILP solver, limited to 10 seconds")])
+run_sa_g("sa_100_1-10-25-n ", [100], [1, 10, 25])  # file-name, T, n_runs, neighbours
+# run_experiment("milp-1800", [(milp_solve, 1800, "MILP solver, limited to 1800 second")])
+
