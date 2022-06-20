@@ -1,10 +1,10 @@
 import importlib.util
-import numpy as np
-import graphSchedule
+from graphSchedule import graphSchedule
+import random
 
 class instance:
-    def __init__(self, i):
-        mod = self.getInstanceInfo(i)
+    def __init__(self, i, j):
+        mod = self.getInstanceInfo(i, j)
         
         self.instance = i
         self.orders: dict[int, dict] = mod.orders
@@ -18,11 +18,12 @@ class instance:
         self.changeOvers: dict[tuple[int, str, str], int] = mod.changeOvers
         self.nodes, self.zeroEdges = self.createBaseGraph()
         self.opsPerJobAcc = self.getOpsPerJobAcc()
+        self.fjsResults = []
 
     # gets the information from an instance file
-    def getInstanceInfo(self, i):
-        fileName = 'FJSP_' + str(i)
-        spec = importlib.util.spec_from_file_location('instance', "../../instances/" + fileName + '.py')
+    def getInstanceInfo(self, i, j):
+        fileName = 'FJSP_' + str(i) + '-' + str(j)
+        spec = importlib.util.spec_from_file_location('instance', "./instances/new_instances/" + fileName + '.py')
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         return mod
@@ -33,65 +34,90 @@ class instance:
     # I try to avoid this as to make the results more reproducible
     def globalSelectionInitialSchedule(self):
         # initialize empty schedule
-        v1 = []
-        v2 = []
+        machines: dict[int, list[tuple[int, int]]] = {}
+        for i in self.machines:
+            machines[i] = []
+        possibleEdges: dict[int, list[tuple[int, int]]] = {}
+        chosenEdges: dict[int, list[tuple[int, int]]] = {}
+        for i in self.nodes:
+            possibleEdges[i] = []
+            chosenEdges[i] = []
 
-        time_array = np.zeros(self.nrMachines) # keeps track of all machines and the workin times
-        last_enzyme = np.zeros(self.nrMachines) # keeps track of the last enzyme operated on on each machine
+        timeArray = [] # keeps track of all machines and the workin times
+        lastProduct = [] # keeps track of the last enzyme operated on on each machine
+        for i in range(self.nrMachines):
+            timeArray.append(0)
+            lastProduct.append("")
 
-        jobs = self.createJobOrdering()
         # loop over every available job sorted by overall cost
+        jobs = self.createJobOrdering()
+        js = random.sample(self.jobs, len(self.jobs))
         for j in jobs:
-            product = self.orders[j]["product"]
-            previous_op = 0 # keeps track of the completion time of the previous operation
+            enzyme = self.orders[j]["product"]
+            opCompletion = 0 # keeps track of the completion time of the previous operation
 
             #loop over every operation of the chosen job (in order)
-            for op in self.operations[j]:
-                alternatives = self.machineAlternatives[(j, op)] # get all machines on which the operation can be run
+            for o in self.operations[j]:
+                alternatives = self.machineAlternatives[(j, o)] # get all machines on which the operation can be run
 
                 # for each machine, add the total time depenedent on the processing time of the operation
                 # and the changeover with the previous operation
                 # will be None if the operation cannot be performed on that machine
-                temp_array = []
-                for machine in range(self.nr_machines):
+                tempArray = []
+                for machine in range(self.nrMachines):
                     if machine in alternatives:
-                        duration = self.processingTimes[(j, op, machine)]
+                        duration = self.processingTimes[(j, o, machine)]
                     
                         # if this is the first operation on a certain machine, there will be no changeOver
                         changeOver = 0
-                        if (last_enzyme[machine] != 0):
-                            changeOver = self.changeOvers[(machine, last_enzyme[machine], product)]
+                        if (lastProduct[machine] != ""):
+                            changeOver = self.changeOvers[(machine, lastProduct[machine], enzyme)]
 
-                        val = max(time_array[machine] + changeOver, previous_op) + duration
-                        temp_array.append(val)
+                        val = max(timeArray[machine] + changeOver, opCompletion) + duration
+                        tempArray.append(val)
                     else:
-                        temp_array.append(None)
+                        tempArray.append(None)
 
                 # find the smallest time in the temporary array and corresponding machine i
-                smallest = min(x for x in temp_array if x is not None)
-                m = temp_array.index(smallest)
+                smallest = min(x for x in tempArray if x is not None)
+                m = tempArray.index(smallest)
 
-                # update the time_array, the last enzyme on that machine and the ending time of the operation
-                time_array[m] = smallest
-                last_enzyme[m] = product
-                previous_op = smallest
+                # update tracking arrays
+                timeArray[m] = smallest
+                lastProduct[m] = enzyme
+                opCompletion = smallest
 
-                # update the schedule vector representation
-                v1.append(m)
-                v2.append(j)
+                # find the node of the operation
+                n = self.opsPerJobAcc[j] + o + 1
 
-        machines, possibleEdges, chosenEdges = self.convertToGraph(v1, v2)                
+                # add the correct edges to the graph representation
+                l = len(machines[m])
+                for i in range(l):
+                    t = machines[m][i]
+                    enzymeT = self.orders[t[1]]["product"]
+
+                    cost0T = self.changeOvers[(m, enzyme, enzymeT)]
+                    costT0 = self.changeOvers[(m, enzymeT, enzyme)]
+
+                    possibleEdges[n].append((t[0], cost0T))
+                    possibleEdges[t[0]].append((n, costT0))
+
+                    if (i == l - 1):
+                        chosenEdges[t[0]].append((n, costT0))
+                machines[m].append((n, j))
+
         return(graphSchedule(self, machines, possibleEdges, chosenEdges))
 
     # order the jobs based on the total amount of time necessary to complete them
     def createJobOrdering(self):
-        times = zip(np.zeros(self.nrJobs), self.jobs)
+        times = []
         for j in self.jobs:
+            times.append((0, j))
             for o in self.operations[j]:
                 machines = self.machineAlternatives[(j, o)]
-                times[j][0] += self.processingTimes[(j, o, machines[0])]
+                times[j] = (times[j][0] + self.processingTimes[(j, o, machines[0])], times[j][1])
         result = []
-        for t in sorted(times):
+        for t in sorted(times, reverse = True):
             result.append(t[1])
         return result
 
@@ -128,54 +154,11 @@ class instance:
             ind += len(self.operations[j])
             zeroEdges[ind].append((index, 0))
         return nodes, zeroEdges
-        
-    # converts the initial schedule from a two vector representation to a completed graph representation
-    def convertToGraph(self, v1, v2):
-        opsOnMachine: dict[int, list[tuple[int, int]]] = {} # keep track of which operation is performed on which machine and its job
-        possibleEdges: dict[int, list[tuple[int, int]]] = {} # edges connecting all operations on the same machine
-        chosenEdges: dict[int, list[tuple[int, int]]] = {} # edges determining the order of operations on a machine
-        for m in self.machines:
-            opsOnMachine[m] = []
-        for n in self.nodes:
-            possibleEdges[n] = []
-            chosenEdges[n] = []
-
-        opInJob = np.zeros(self.nrJobs) # keeps track of the next operation to be performed on each job
-
-        # loop over all operations and find their respective job and machine
-        for j in v2:
-            o = self.operations[j][opInJob[j]]
-            n = self.opsPerJobAcc[j] + o + 1
-            m = v1[n - 1]
-            
-            # loop over all other operations performed on that machine
-            for i in range(len(opsOnMachine[m])):
-                t = opsOnMachine[m][i]
-
-                # determine the costs of the edges
-                enzyme0 = self.orders[j]["product"]
-                enzyme1 = self.orders[t[1]]["product"]
-                changeOver01 = self.changeOvers[(m, enzyme0, enzyme1)]
-                changeOver10 = self.changeOvers[(m, enzyme1, enzyme0)]
-
-                # add all possible edges
-                possibleEdges[n].append((t[0], changeOver01))
-                possibleEdges[t[0]].append((n, changeOver10))
-
-                # add the chosen edge into the schedule
-                if (i == len(opsOnMachine[m] - 1)):
-                    chosenEdges[t[0]].append((n, changeOver10))
-
-            # update the machine lists and trackers
-            opsOnMachine[m].append((n, j))
-            opInJob[j] += 1
-
-        return opsOnMachine, possibleEdges, chosenEdges
 
     # creates a list to easily find which job an operation node belongs to
     def getOpsPerJobAcc(self):
         result = [0] 
         for j in range(self.nrJobs):
-            opsInJob = len(self.operations[self.jobs(j)])
+            opsInJob = len(self.operations[self.jobs[j]])
             result.append(result[j] + opsInJob)
         return result

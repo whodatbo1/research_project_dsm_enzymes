@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import random
 import instance
@@ -18,20 +17,24 @@ class graphSchedule:
     # equality function for two instances of graphSchedule
     def __eq__(self, o):
         if (isinstance(o, graphSchedule)):
-            a = self.nodes == o.nodes
-            b = self.zeroEdges == o.zeroEdges
-            c = self.machines == o.machines
-            d = self.possibleEdges == o.possibleEdges
-            e = self.chosenEdges == o.chosenEdges
-            return a and b and c and d and e
+            a = self.machines == o.machines
+            b = self.chosenEdges == o.chosenEdges
+            return a and b
         return False
 
     def getNeighborhoodAssignment(self, size):
         result = []
         s = 0
 
+        # stores incoming edges for each node from including possibleEdges
+        incoming2: dict[int, list[int]] = {}
+        for n in self.nodes:
+            incoming2[n] = []
+        for n in self.nodes:
+            outgoingEdges = self.possibleEdges[n]
+            for t in outgoingEdges:
+                incoming2[t[0]].append(n)
         l = len(self.nodes) - 1
-        incomingEdges = self.getIncomingEdges()
 
         for current in self.criticalPath:
             # break if the size limit of the neighborhood is reached
@@ -57,7 +60,7 @@ class graphSchedule:
                     break
                         
             # loop over all other possible machines for that operation
-            possibleMachines = self.inst.machineAlternatives[(j, o)]
+            possibleMachines = self.inst.machineAlternatives[(j, o)].copy()
             possibleMachines.remove(m)
             for pickMachine in possibleMachines:
                 # break if the size limit of the neighborhood is reached
@@ -101,9 +104,9 @@ class graphSchedule:
                     newChosenEdges[current].append((t[0], self.getCorrectCost(j, t[0], pickMachine, True)))
 
                 # all edges going into the current node will now go into the picked node
-                for n in incomingEdges[current]:
-                    newPossibleEdges[n] = {}
-                    newChosenEdges[n] = {}
+                for n in incoming2[current]:
+                    newPossibleEdges[n] = []
+                    newChosenEdges[n] = []
                     for t in self.possibleEdges[n]:
                         if (t[0] == current):
                             newPossibleEdges[n].append((nPick, self.getCorrectCost(jPick, n, m, False)))
@@ -114,18 +117,18 @@ class graphSchedule:
                         else: newChosenEdges[n].append(t)
 
                 # all edges going into the picked node will now go into the current node
-                for n in incomingEdges[nPick]:
-                    newPossibleEdges[n] = {}
-                    newChosenEdges[n] = {}
+                for n in incoming2[nPick]:
+                    newPossibleEdges[n] = []
+                    newChosenEdges[n] = []
                     for t in self.possibleEdges[n]:
-                        if (t[0] == current):
+                        if (t[0] == nPick):
                             newPossibleEdges[n].append((current, self.getCorrectCost(j, n, pickMachine, False)))
                         else: newPossibleEdges[n].append(t)
                     for t in self.chosenEdges[n]:
-                        if (t[0] == current):
+                        if (t[0] == nPick):
                             newChosenEdges[n].append((current, self.getCorrectCost(j, n, pickMachine, False)))
                         else: newChosenEdges[n].append(t)
-
+                
                 result.append(graphSchedule(self.inst, newMachines, newPossibleEdges, newChosenEdges))
                 s += 1
         return result
@@ -146,20 +149,144 @@ class graphSchedule:
         else: return self.inst.changeOvers[(m, enzymen, enzyme)]
 
 
-    def getNeighborhoodSequencing(self, size):
+    def getNeighborhoodAssignment2(self, perMachine):
+        incomingPossible: dict[int, list[int]] = {}
+        for n in self.nodes:
+            incomingPossible[n] = []
+        for n in self.nodes:
+            outgoingEdges = self.possibleEdges[n]
+            for t in outgoingEdges:
+                incomingPossible[t[0]].append(n)
+
         result = []
-        s = 0
+        # loop over each machine and get the operations performed on it
+        for m0 in self.inst.machines:
+            ops0 = self.machines[m0]
+            costs0 = self.getCosts(ops0, m0)
+
+            for _ in range(perMachine):
+                # pick the node with largest cost
+                if (len(costs0) == 0):
+                    break
+                n0 = max(costs0, key = costs0.get)
+                costs0.pop(n0)
+
+                # get the other machines on which this job can run
+                ms = []
+                for v in self.inst.machineAlternatives.values():
+                    if m0 in v:
+                        ms = v.copy()
+                        break
+                ms.remove(m0)
+
+                # loop over all of the other machines
+                for m1 in ms:
+                    pick = random.choice(self.machines[m1])
+                    n1 = pick[0]
+                    j1 = pick[1]
+
+                    # create new dictionary for machines
+                    j0 = -1
+                    newMachines = self.machines.copy()
+                    newMachines[m0] = self.machines[m0].copy()
+                    for t in newMachines[m0]:
+                        if (t[0] == n0):
+                            j0 = t[1]
+                            newMachines[m0].remove(t)
+                            break
+                    newMachines[m0].append(pick)
+                    newMachines[m1] = self.machines[m1].copy()
+                    newMachines[m1].remove(pick)
+                    newMachines[m1].append((n0, j0))
+
+                    newPossibleEdges = self.possibleEdges.copy()
+                    newChosenEdges = self.chosenEdges.copy()
+                    
+                    # all edges from n0 now start at n1
+                    newPossibleEdges[n1] = []
+                    newChosenEdges[n1] = []
+                    for t in self.possibleEdges[n0]:
+                        newPossibleEdges[n1].append((t[0], self.getChangeOver(n1, t[0], m0)))
+                    for t in self.chosenEdges[n0]:
+                        newChosenEdges[n1].append((t[0], self.getChangeOver(n1, t[0], m0)))
+
+                    # all edges from n1 now start at n0
+                    newPossibleEdges[n0] = []
+                    newChosenEdges[n0] = []
+                    for t in self.possibleEdges[n1]:
+                        newPossibleEdges[n0].append((t[0], self.getChangeOver(n0, t[0], m1)))
+                    for t in self.chosenEdges[n1]:
+                        newChosenEdges[n0].append((t[0], self.getChangeOver(n0, t[0], m1)))
+
+                    # all edges going into n0 will now go into n1
+                    for n in incomingPossible[n0]:
+                        newPossibleEdges[n] = []
+                        newChosenEdges[n] = []
+                        for t in self.possibleEdges[n]:
+                            if (t[0] == n0):
+                                newPossibleEdges[n].append((n1, self.getChangeOver(n, n1, m0)))
+                            else: newPossibleEdges[n].append(t)
+                        for t in self.chosenEdges[n]:
+                            if (t[0] == n0):
+                                newChosenEdges[n].append((n1, self.getChangeOver(n, n1, m0)))
+                            else: newChosenEdges[n].append(t)
+
+                    # all edges going into n1 will now go into n0
+                    for n in incomingPossible[n1]:
+                        newPossibleEdges[n] = []
+                        newChosenEdges[n] = []
+                        for t in self.possibleEdges[n]:
+                            if (t[0] == n1):
+                                newPossibleEdges[n].append((n0, self.getChangeOver(n, n0, m1)))
+                            else: newPossibleEdges[n].append(t)
+                        for t in self.chosenEdges[n]:
+                            if (t[0] == n1):
+                                newChosenEdges[n].append((n0, self.getChangeOver(n, n0, m1)))
+                            else: newChosenEdges[n].append(t)
+
+                    result.append(graphSchedule(self.inst, newMachines, newPossibleEdges, newChosenEdges))
+        return result
+
+    # get the cost for each operation (duration + changeOver times) of a certain machine
+    def getCosts(self, ops, m):
+        costs = {}
+        for t in ops:
+                costs[t[0]] = 0
+        for t in ops:
+            o = t[0] - self.inst.opsPerJobAcc[t[1]] - 1
+            costs[t[0]] += self.inst.processingTimes[(t[1], o, m)]
+            for e in self.chosenEdges[t[0]]:
+                costs[t[0]] += e[1]
+                costs[e[0]] += e[1]
+        return costs
+
+    def getChangeOver(self, n0, n1, m):
+        # find the jobs belonging to each node
+        j0 = 0
+        j1 = 0
+        while (n0 > self.inst.opsPerJobAcc[j0]):
+            j0 += 1
+        while (n1 > self.inst.opsPerJobAcc[j1]):
+            j1 += 1
+        j0 -= 1
+        j1 -= 1
+
+        # get the enzymes
+        enzyme0 = self.inst.orders[j0]["product"]
+        enzyme1 = self.inst.orders[j1]["product"]
+        
+        # return the correct changeOver time
+        return self.inst.changeOvers[(m, enzyme0, enzyme1)]
+
+    def getNeighborhoodSequencing(self):
+        result = []
 
         l = len(self.nodes) - 1
-
         for i in range(len(self.criticalPath)):
-            # break if the size limit of the neighborhood is reached
-            if (s >= size):
-                break
 
             # get the current and next node in the sequence
             current = self.criticalPath[i]
-            if (current == l):
+            if (current == 0 or current == l):
                 continue
             next = self.criticalPath[i + 1]
 
@@ -197,7 +324,6 @@ class graphSchedule:
 
             # add the new schedule to the neighborhood
             result.append(graphSchedule(self.inst, self.machines, self.possibleEdges, newChosenEdges))
-            s += 1
         return result
 
     # finds the cost of edge going from the origin node to the destination node
@@ -208,14 +334,21 @@ class graphSchedule:
         return 0
 
     def getDataFrame(self):
-        incomingEdges = self.getIncomingEdges()
-
         visited = [True] # keeps track if a node has been visited or not
         for i in range(len(self.nodes) - 1):
             visited.append(False)
-        timeArray = np.zeros(self.inst.nrMachines) # last use time of each machine
-        lastEnzyme = np.zeros(self.inst.nrMachines) # last enzyme used on each machine
-        previousOpCompletion = np.zeros(self.inst.nrJobs) # completion time of last operation on each job
+
+        incomingEdges = self.getIncomingEdges()
+
+        timeArray = [] # last use time of each machine
+        lastEnzyme = [] # last enzyme used on each machine
+        for i in range(self.inst.nrMachines):
+            timeArray.append(0)
+            lastEnzyme.append("")
+
+        previousOpCompletion = [] # completion time of last operation on each job
+        for i in range(self.inst.nrJobs):
+            previousOpCompletion.append(0)
 
         l = len(self.nodes) - 1 # number of nodes (for computational simplicity)
         queue: list[int] = [] # a queue to keep track of the next nodes to visit
@@ -227,9 +360,9 @@ class graphSchedule:
             n = queue.pop(0)
 
             # if the ending node is reached or not all previous nodes have been reached, skip this iteration
-            if (n == l):
+            if (n == l or visited[n]):
                 continue
-            skipping =  False
+            skipping = False
             for i in (incomingEdges[n]):
                 if (not visited[i]):
                     skipping = True
@@ -261,7 +394,7 @@ class graphSchedule:
 
             # find the starting time of the operation
             changeOver = 0
-            if (lastEnzyme[m] != 0):
+            if (lastEnzyme[m] != ""):
                 changeOver = self.inst.changeOvers[(m, lastEnzyme[m], p)]
             s = max(previousOpCompletion[j], timeArray[m] + changeOver)
 
@@ -269,18 +402,17 @@ class graphSchedule:
             res = {"Machine": m, "Job": j, "Product": p, "Operation": o, "Start": s, "Duration": d, "Completion": s + d}
             result.append(res)
 
-            # update all necessary values
+            # update all necessary tracking values and the queue
             timeArray[m] = s + d
             lastEnzyme[m] = p
             previousOpCompletion[j] = s + d
             visited[n] = True
-            # add all connected nodes to the queue
             for t in (self.zeroEdges[n]):
                 queue.append(t[0])
             for t in (self.chosenEdges[n]):
                 queue.append(t[0])
 
-
+        # convert and return the result to a dataframe
         dfSchedule = pd.DataFrame(result)
         dfSchedule.sort_values(by=['Start', 'Machine', 'Job'], inplace=True)
         dfSchedule.to_csv('csv_output.csv', index=False)
@@ -291,30 +423,25 @@ class graphSchedule:
         return comp_times.max()
 
     def getCriticalPath(self, current, cost):
-        # update cost with the cost of the current node
-        cost += self.inst.nodes[current]
-        last = len(self.inst.nodes) - 1
+        # if the end node is reached without the correct cost, return nothing
+        last = len(self.nodes) - 1
+        if (current == last):
+            return []
 
         # if the makespan is reached, return the tail of the path
+        cost += self.nodes[current]
         if (cost == self.makeSpan):
-            return [current, self.inst.nodes[last]]
-
-        # if the end node is reached without the correct cost, return nothing
-        if (current == self.inst.nodes[last]):
-            return []
+            return [current, last]
     
-        outgoingEdges = self.chosenEdges[current] + self.zeroEdges[current]
+        outgoingEdges = self.zeroEdges[current] + self.chosenEdges[current]
         # loop over all outgoing edges of the current node
         for next in outgoingEdges:
-            # recursively build the path
-            edgeCost = next[1]
-            path = [current] + self.getCriticalPath(next[0], cost + edgeCost)
+            path = [current] + self.getCriticalPath(next[0], cost + next[1])
 
             # return the path if complete, nothing if not
-            if (path[-1] == self.inst.nodes[last]):
+            if (path[-1] == last):
                 return path
-            return []
-        return []
+        return path
 
     # returns a dictionary storing all incoming edges in the final schedule graph
     def getIncomingEdges(self):
