@@ -137,8 +137,11 @@ def neighbourhood(inst, g, v3):
     return n
 
 
-def run_sa_g(instance_num, temp, path):
+def run_sa_g(instance_num, temp, path, delta):
     file_name = 'FJSP_' + str(instance_num)
+    # spec = importlib.util.spec_from_file_location('instance', "instances/instancesm9_op3/" + file_name + '.py')
+    # spec = importlib.util.spec_from_file_location('instance', "instances/instancesm9_op2/" + file_name + '.py')
+    # spec = importlib.util.spec_from_file_location('instance', "instances/instancesm9_op1/" + file_name + '.py')
     spec = importlib.util.spec_from_file_location('instance', "instances/" + file_name + '.py')
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -153,9 +156,8 @@ def run_sa_g(instance_num, temp, path):
     df = get_data_frame(g, alg, s[2])
     if not feasible_schedule(alg, df):
         print("Infeasible schedule: " + str(df))
-        return -100
     temperature = temp
-    deltaT = 0.9
+    deltaT = delta
     found_better = 0
     selected_worse = 0
     iterations = 0
@@ -164,14 +166,8 @@ def run_sa_g(instance_num, temp, path):
     temperatures.append(temperature)
     min_m = milp_utils.calculate_makespan(df)
     mkspns.append(min_m)
-    while temperature > 1:
+    while temperature > 0.01:
         neighbours = neighbourhood(alg, g, s[2])
-        # new_g = g
-        # for n in neighbours:
-        #     m_n = milp_utils.calculate_makespan(get_data_frame(n, alg, s[2]))
-        #     if m_n < min_m:
-        #         min_m = m_n
-        #         new_g = n
         new_g = random.choice(neighbours)
         delta = compare_graphs(alg, s[2], g, new_g)
         if delta > 0:
@@ -179,8 +175,6 @@ def run_sa_g(instance_num, temp, path):
             found_better += 1
         else:
             r = random.uniform(0, 1)
-            # print("r: " + str(r))
-            # print("exp(d/t): " + str(np.exp(delta / temperature)))
             if r < np.exp(delta / temperature):
 
                 selected_worse += 1
@@ -190,17 +184,13 @@ def run_sa_g(instance_num, temp, path):
         temperatures.append(temperature)
         mkspns.append(milp_utils.calculate_makespan(get_data_frame(g, alg, s[2])))
 
-    create_t_mksp_plot(instance_num, temperatures, mkspns, path)
+    # create_t_mksp_plot(instance_num, temperatures, mkspns, path)
     df = get_data_frame(g, alg, s[2])
     if not feasible_schedule(alg, df):
         print("Infeasible schedule: \n" + str(df))
-        return -1
-    print(df)
+        return -1, mkspns, temperatures
     res = milp_utils.calculate_makespan(df)
-    print("found better: " + str(found_better))
-    print("selected worse: " + str(selected_worse))
-    print("iterations: " + str(iterations))
-    return res
+    return res, mkspns, temperatures
 
 
 def create_t_mksp_plot(i, t, m, path):

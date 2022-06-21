@@ -1,0 +1,2 @@
+MILP solver, limited to 300 second with big instances
+[(0, 146.0), (1, 173.0), (2, 197.0)]
