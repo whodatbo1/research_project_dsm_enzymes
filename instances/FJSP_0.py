@@ -1,6 +1,6 @@
 nr_machines = 9
 nr_jobs = 6
-orders = {0: {'product': 'enzyme0', 'due': 10}, 1: {'product': 'enzyme1', 'due': 15}, 2: {'product': 'enzyme2', 'due': 14}, 3: {'product': 'enzyme3', 'due': 18}, 4: {'product': 'enzyme4', 'due': 10}, 5: {'product': 'enzyme5', 'due': 11}}
+orders = {0: {'product': 'enzyme0', 'due': 16}, 1: {'product': 'enzyme1', 'due': 17}, 2: {'product': 'enzyme2', 'due': 18}, 3: {'product': 'enzyme3', 'due': 19}, 4: {'product': 'enzyme4', 'due': 11}, 5: {'product': 'enzyme5', 'due': 17}}
 machines = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 jobs = [0, 1, 2, 3, 4, 5]
 operations = {0: [0, 1, 2], 1: [0, 1], 2: [0, 1], 3: [0, 1, 2], 4: [0, 1, 2], 5: [0, 1]}

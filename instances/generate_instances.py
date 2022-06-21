@@ -4,7 +4,7 @@ import random
 # Random instance generator
 nr_instances = 13
 # Define general file name for instances
-destination = "instances/FJSP_"
+destination = "FJSP_"
 
 # DSM Plant Input
 product_types = ["enzyme0", "enzyme1", "enzyme2", "enzyme3", "enzyme4", "enzyme5"]
@@ -30,7 +30,7 @@ processing_times = [[8, 3, 0, 4, 5, 0],  # preparation, [enzyme0, enzyme1, enzym
                     [4, 0, 3, 6, 7, 3]]  # reception  , [enzyme0, enzyme1, enzyme2, enzyme3, enzyme4, enzyme5]
 
 # Read change over matrix from csv
-change_overs_csv = pd.read_csv("instances/input/change_overs.csv")
+change_overs_csv = pd.read_csv("input/change_overs.csv")
 change_overs = {}
 for index, row in change_overs_csv.iterrows():
    change_overs[(row['Machine'], row['Product1'], row['Product2'])] = row["ChangeOver"]
